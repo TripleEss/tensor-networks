@@ -1,7 +1,8 @@
 import math
 import logging
-import numpy as np
 from typing import List
+
+import numpy as np
 
 from setup_logging import setup_logging
 from svd import truncated_svd
@@ -25,7 +26,7 @@ def decompose(tensor: np.ndarray, chi: int, d: int = 2) -> List[np.ndarray]:
     tensor.shape = (1, *tensor.shape)
     for i in range(1, n):
         # Reshape the tensor into a matrix (to calculate the SVD)
-        tensor.shape = (d * tensor.shape[0], d**(n - i))
+        tensor.shape = (d * tensor.shape[0], d ** (n - i))
         # Split the tensor using Singular Value Decomposition (SVD)
         u, s, v = truncated_svd(tensor, chi)
         # Split the first index of the matrix u
@@ -40,12 +41,14 @@ def decompose(tensor: np.ndarray, chi: int, d: int = 2) -> List[np.ndarray]:
     tensor_train.append(tensor)
     return tensor_train
 
+
 def phi_left(f: List[np.ndarray], b: List[np.ndarray], l: int) -> np.ndarray:
     phi = np.tensordot(f[0], b[0], axes=([1], [0]))
     for f_i, b_i in zip(f[1:l], b[1:l]):
         phi = np.tensordot(phi, f_i, axes=([-1], [0]))
         phi = np.tensordot(phi, b_i, axes=([-1], [0]))
     return phi
+
 
 def phi_right(f: List[np.ndarray], b: List[np.ndarray], l: int) -> np.ndarray:
     phi = np.tensordot(f[-1], b[-1], axes=([0], [0]))
@@ -54,13 +57,14 @@ def phi_right(f: List[np.ndarray], b: List[np.ndarray], l: int) -> np.ndarray:
         phi = np.tensordot(phi, b_i, axes=([0], [0]))
     return phi
 
+
 # %% Testing
 if __name__ == '__main__':
     setup_logging(logging.DEBUG)
     print('--- Testing tensor decomposition ---')
-    t = np.arange(8)
+    t = np.arange(64)
     print(f"Tensor: {t}")
-    ttrain = decompose(t, 5)
+    ttrain = decompose(t, chi=4, d=2)
     print(f"Shape of decomposed tensor train: {[x.shape for x in ttrain]}")
     print(f"Decomposed tensor train:\n{ttrain}")
     ttest = ttrain[0]
