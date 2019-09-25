@@ -1,14 +1,19 @@
 import logging
-from typing import Tuple
+from typing import Tuple, Optional
 
 import numpy as np
 
 
-def truncated_svd(tensor: np.ndarray, chi: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    u, s, v = np.linalg.svd(tensor, full_matrices=False)
-    assert u.shape[1] == s.size == v.shape[0]
+def truncated_svd(tensor: np.ndarray, chi: Optional[int]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    if chi is not None and chi < 0:
+        raise ValueError('chi has to be at least 0')
 
-    if chi <= s.size:
+    u, s, v = np.linalg.svd(tensor, full_matrices=False)
+
+    if chi is None:
+        logging.debug(f'{tensor.shape} --SVD--> {u.shape} {s.shape} {v.shape}')
+        return u, s, v
+    elif chi <= s.size:
         new_u = u[:, :chi]
         new_s = s[:chi]
         new_v = v[:chi, :]

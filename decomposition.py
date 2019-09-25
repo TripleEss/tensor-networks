@@ -1,6 +1,6 @@
 import math
 import logging
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 
@@ -8,7 +8,7 @@ from setup_logging import setup_logging
 from svd import truncated_svd
 
 
-def decompose(tensor: np.ndarray, chi: int, d: int = 2) -> List[np.ndarray]:
+def decompose(tensor: np.ndarray, d: int, chi: Optional[int] = None) -> List[np.ndarray]:
     """
     Decompose a tensor into the tensor train format using SVD
 
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     logging.debug('--- Testing tensor decomposition ---')
     t = np.arange(64)
     logging.debug(f"Original tensor's shape: {t.shape}")
-    ttrain = decompose(t, chi=4, d=2)
+    ttrain = decompose(t, d=2, chi=2)
     logging.debug(f"Shape of decomposed tensor train: {[x.shape for x in ttrain]}")
     ttest = ttrain[0]
     for x in ttrain[1:]:
