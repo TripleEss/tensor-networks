@@ -12,33 +12,32 @@ def decompose(tensor: np.ndarray, chi: int, d: int = 2) -> List[np.ndarray]:
     """
     Decompose a tensor into the tensor train format using SVD
 
-    :param tensor: The tensor to decompose (has to be a vector)
+    :param tensor: The tensor to decompose
     :param chi: How many elements to keep when splitting the tensor using SVD
     :param d: The dimension of the spatial indices
     :return: The tensor in tensor train format
     """
-    assert tensor.ndim == 1
     # Amount of elements in the tensor: $d^N$ (= tensor.shape[0])
     # $\Longleftrightarrow N = log_d(d^N)$
-    n = int(math.log(tensor.shape[0], d))
+    n = int(math.log(tensor.size, d))
+    # Add a mock index on the left for the first iteration
+    t = tensor.reshape(1, tensor.size)
     tensor_train = []
-    # Add a second mock index on the left for the first iteration
-    tensor.shape = (1, *tensor.shape)
     for i in range(1, n):
         # Reshape the tensor into a matrix (to calculate the SVD)
-        tensor.shape = (d * tensor.shape[0], d ** (n - i))
+        t.shape = (d * t.shape[0], d ** (n - i))
         # Split the tensor using Singular Value Decomposition (SVD)
-        u, s, v = truncated_svd(tensor, chi)
+        u, s, v = truncated_svd(t, chi)
         # Split the first index of the matrix u
         u.shape = (u.shape[0] // d, d, u.shape[1])
         # u is part of the tensor train
         tensor_train.append(u)
         # Continue, using the contraction of s and v as the remaining tensor
-        tensor = np.diag(s) @ v
+        t = np.diag(s) @ v
     # The remaining matrix is the right-most tensor in the tensor train
     # and gets a mock index on the right for consistency
-    tensor.shape = (*tensor.shape, 1)
-    tensor_train.append(tensor)
+    t.shape = (*t.shape, 1)
+    tensor_train.append(t)
     return tensor_train
 
 
@@ -60,14 +59,16 @@ def phi_right(f: List[np.ndarray], b: List[np.ndarray], l: int) -> np.ndarray:
 
 # %% Testing
 if __name__ == '__main__':
-    setup_logging(logging.DEBUG)
-    print('--- Testing tensor decomposition ---')
+    setup_logging()
+    logging.debug('--- Testing tensor decomposition ---')
     t = np.arange(64)
-    print(f"Tensor: {t}")
+    logging.debug(f"Original tensor's shape: {t.shape}")
     ttrain = decompose(t, chi=4, d=2)
-    print(f"Shape of decomposed tensor train: {[x.shape for x in ttrain]}")
-    print(f"Decomposed tensor train:\n{ttrain}")
+    logging.debug(f"Shape of decomposed tensor train: {[x.shape for x in ttrain]}")
     ttest = ttrain[0]
     for x in ttrain[1:]:
         ttest = np.tensordot(ttest, x, axes=1)
-    print(f"Reassembled tensor train:\n{ttest}")
+    ttest.shape = ttest.shape[1:-1]
+    logging.debug(f"Shape of the reassembled tensor train: {ttest.shape}")
+    diff = abs(t.flatten() - ttest.flatten()).reshape(ttest.shape)
+    logging.debug(f"Maximum difference between the original and the reassembled tensor: {diff.max()}")

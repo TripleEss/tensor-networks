@@ -1,7 +1,7 @@
 import logging
 
 
-def setup_logging(level: int = logging.INFO, show_timestamps: bool = False,
+def setup_logging(level: int = logging.DEBUG, show_timestamps: bool = False,
                   show_location: bool = True):
     logging.basicConfig(
         format='{0}%(levelname)-8s{1}%(message)s'.format(
