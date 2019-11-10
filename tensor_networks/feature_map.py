@@ -2,7 +2,7 @@ from math import pi, sin, cos
 
 import numpy as np
 
-from my_types import *
+from utils.annotations import *
 
 
 def color_abs_to_percentage(value: AbsColor) -> PartialColor:

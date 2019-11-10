@@ -1,5 +1,5 @@
 import logging
-from my_types import *
+from utils.annotations import *
 
 import numpy as np
 from scipy.sparse.linalg import svds as scipy_sparse_svd

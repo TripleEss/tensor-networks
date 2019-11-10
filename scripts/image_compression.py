@@ -3,8 +3,8 @@ import argparse
 import numpy as np
 from PIL import Image
 
-from my_types import *
-from svd import truncated_svd
+from utils.annotations import *
+from tensor_networks.svd import truncated_svd
 
 
 def img_to_array(path: str) -> ndarray:

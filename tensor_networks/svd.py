@@ -1,9 +1,9 @@
 import logging
-from my_types import *
+from utils.annotations import *
 
 import numpy as np
 
-from my_types import SVD
+from utils.annotations import SVD
 
 
 def truncate(u: ndarray, s: ndarray, v: ndarray, chi: int) -> SVD:

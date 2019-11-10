@@ -2,8 +2,8 @@ import logging
 
 import numpy as np
 
-from setup_logging import setup_logging
-from tensor_train import TensorTrain
+from utils.setup_logging import setup_logging
+from tensor_networks.tensor_train import TensorTrain
 
 
 if __name__ == '__main__':

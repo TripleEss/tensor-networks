@@ -3,8 +3,8 @@ from functools import reduce, partial
 
 import numpy as np
 
-from my_types import *
-from svd import truncated_svd
+from utils.annotations import *
+from tensor_networks.svd import truncated_svd
 
 
 class TensorTrain(Tuple[ndarray, ...]):
