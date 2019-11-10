@@ -28,7 +28,6 @@ def main(infile, outfile):
     save_array_as_img(compressed_arr, outfile)
 
 
-# %%
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('infile')
