@@ -3,25 +3,30 @@ import argparse
 import numpy as np
 from PIL import Image
 
+from my_types import *
 from svd import truncated_svd
 
 
-def img_to_array(path: str) -> np.ndarray:
+def img_to_array(path: str) -> ndarray:
     img = Image.open(path)
     return np.array(img)
 
-def compress(array: np.ndarray) -> np.ndarray:
+
+def compress(array: ndarray) -> ndarray:
     u, s, v = truncated_svd(array, max(array.shape))
     return (u @ np.diag(s) @ v).astype(array.dtype)
 
-def save_array_as_img(array: np.ndarray, path: str):
+
+def save_array_as_img(array: ndarray, path: str):
     new_img = Image.fromarray(array)
     new_img.save(path)
+
 
 def main(infile, outfile):
     arr = img_to_array(infile)
     compressed_arr = compress(arr)
     save_array_as_img(compressed_arr, outfile)
+
 
 # %%
 if __name__ == '__main__':

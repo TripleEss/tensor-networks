@@ -1,10 +1,12 @@
 import logging
-from typing import Tuple, Optional
+from my_types import *
 
 import numpy as np
 
+from my_types import SVD
 
-def truncate(u: np.ndarray, s: np.ndarray, v: np.ndarray, chi: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+
+def truncate(u: ndarray, s: ndarray, v: ndarray, chi: int) -> SVD:
     if chi < 0:
         raise ValueError('chi has to be at least 0')
     if chi > s.size:
@@ -17,13 +19,13 @@ def truncate(u: np.ndarray, s: np.ndarray, v: np.ndarray, chi: int) -> Tuple[np.
     return u[:, :chi], s[:chi], v[:chi, :]
 
 
-def truncated_svd(tensor: np.ndarray, chi: Optional[int]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def truncated_svd(tensor: ndarray, chi: Optional[int], truncator=truncate) -> SVD:
     u, s, v = np.linalg.svd(tensor, full_matrices=False)
     _log_msg = f'{tensor.shape} --SVD--> {u.shape} {s.shape} {v.shape}'
     if chi is None:
         logging.debug(_log_msg)
         return u, s, v
-    u, s, v = truncate(u, s, v, chi)
+    u, s, v = truncator(u, s, v, chi)
     _log_msg += f' --truncated/padded--> {u.shape} {s.shape} {v.shape}'
     logging.debug(_log_msg)
     return u, s, v

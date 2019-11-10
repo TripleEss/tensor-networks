@@ -1,11 +1,11 @@
 import logging
-from typing import Tuple
+from my_types import *
 
 import numpy as np
 from scipy.sparse.linalg import svds as scipy_sparse_svd
 
 
-def sparse_svd(a: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def sparse_svd(a: ndarray) -> Tuple[ndarray, ndarray, ndarray]:
     new_a = np.zeros([np.shape(a)[0] + 2, np.shape(a)[1] + 2], 'float64')
     new_a[0:np.shape(a)[0], 0:np.shape(a)[1]] = a
     u, s, v = scipy_sparse_svd(new_a, k=min(new_a.shape[0], new_a.shape[1]) - 2)
@@ -15,7 +15,7 @@ def sparse_svd(a: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     return u, s, v
 
 
-def robust_svd(a: np.ndarray, tolerance: float = 0.0 * 1e-14) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def robust_svd(a: ndarray, tolerance: float = 0.0 * 1e-14) -> Tuple[ndarray, ndarray, ndarray]:
     try:
         u, s, v = np.linalg.svd(a, full_matrices=False)
     except np.linalg.LinAlgError as e1:
