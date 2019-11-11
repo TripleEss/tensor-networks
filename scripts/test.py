@@ -13,7 +13,7 @@ if __name__ == '__main__':
     logging.debug(f"Original tensor's shape: {t.shape}")
     ttrain = TensorTrain.decompose(t, d=2, chi=2)
     logging.debug(f"Shape of decomposed tensor train: {[x.shape for x in ttrain]}")
-    ttest = ttrain.fold()
+    ttest = ttrain.reduce()
     logging.debug(f"Shape of the reassembled tensor train: {ttest.shape}")
     diff = abs(t.flatten() - ttest.flatten()).reshape(ttest.shape)
     logging.debug(f"Maximum difference between the original and the reassembled tensor: {diff.max()}")
