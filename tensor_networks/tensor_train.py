@@ -4,20 +4,14 @@ from itertools import accumulate, chain
 
 import numpy as np
 
+from tensor_networks.misc import ArrayTuple
 from tensor_networks.svd import truncated_svd
 from utils.annotations import *
 
 
-class TensorTrain(ndarray):
-    def __new__(cls, *args, **kwargs):
-        return np.array(*args, **kwargs).view(TensorTrain)
-
-    # TODO: figure out what to do with the label index (perhaps save separately and consider whenever __getitem__
-    #  accesses the tensor with the label)
-    def sweep(self, ) -> 'TensorTrain':
-        self.reduce()
-        raise NotImplementedError
-
+class TensorTrain(ArrayTuple):
+    # TODO: figure out what to do with the label index (perhaps save it
+    #  separately and consider whenever __getitem__ accesses the tensor with the label)
     def accumulate(self) -> Iterable[ndarray]:
         """
         :return: The arrays obtained by consecutively contracting every tensor
@@ -65,23 +59,43 @@ class TensorTrain(ndarray):
         train.append(t)
         return cls(train)
 
+    @overload
+    def __getitem__(self, item: int) -> ndarray:
+        ...
+
+    @overload
+    def __getitem__(self, item: slice) -> 'TensorTrain':
+        ...
+
+    def __getitem__(self, item):
+        result = super().__getitem__(item)
+        if isinstance(item, slice) and item.step is not None and item.step < 0:
+            # transpose bond indices if the train gets reversed
+            return type(self)(reversed([
+                arr.transpose(-1, *list(range(1, arr.ndim - 1)), 0)
+                if arr.ndim > 1 else arr
+                for arr in result
+            ]))
+        return result
+
+    def __reversed__(self) -> Iterator[ndarray]:
+        return iter(self[::-1])
+
 
 class AttachedTensorTrain(Sequence[Tuple[ndarray, ndarray]]):
-    def __init__(self, train: TensorTrain, attachment: Sequence[ndarray], is_reversed=False):
+    def __init__(self, train: TensorTrain, attachment: Sequence[ndarray]):
         """
         :param train: TensorTrain
         :param attachment:
             A list of arrays.
             Each element of self will be contracted with the corresponding element of others
-        :param is_reversed:
-            Whether the tensor train and attachment are in reverse order
         """
         assert len(train) == len(attachment)
         self.train = train
         self.attachment = attachment
-        self.is_reversed = is_reversed
 
     def accumulate(self, attachment_index: int = 0) -> Iterable[ndarray]:
+        # TODO: what to do with the mock indices
         """
         :param attachment_index:
             The index each element of others will get contracted over
@@ -89,24 +103,20 @@ class AttachedTensorTrain(Sequence[Tuple[ndarray, ndarray]]):
             The array obtained by consecutively contracting self while contracting each
             intermediate result with the corresponding element of others
         """
-        i0, i1 = (0, 1)
-        if self.is_reversed:
-            i0, i1 = ~i0, ~i1
 
         def reduction_step(result: ndarray, new: Tuple[ndarray, ndarray]) -> ndarray:
             return np.tensordot(
-                np.tensordot(result, new[0], axes=([i1], [i0])),
+                np.tensordot(result, new[0], axes=1),
                 new[1],
-                axes=([i1], [attachment_index])
+                axes=([1], [attachment_index])
             )
 
         return accumulate(
             # chain start value with the rest of self
-            chain(np.tensordot(*self[0], axes=([i1], [attachment_index])),
+            chain([np.tensordot(*self[0], axes=([1], [attachment_index]))],
                   self[1:]),
             reduction_step,
         )
-        # TODO: what to do with the mock indices
 
     @overload
     def __getitem__(self, item: int) -> Tuple[ndarray, ndarray]:
@@ -118,12 +128,7 @@ class AttachedTensorTrain(Sequence[Tuple[ndarray, ndarray]]):
 
     def __getitem__(self, item):
         if isinstance(item, slice):
-            return type(self)(
-                self.train[item],
-                self.attachment[item],
-                is_reversed=(self.is_reversed if slice.step > 0
-                             else not self.is_reversed)
-            )
+            return type(self)(self.train[item], self.attachment[item])
         return self.train[item], self.attachment[item]
 
     def __reversed__(self) -> 'AttachedTensorTrain':
@@ -132,13 +137,13 @@ class AttachedTensorTrain(Sequence[Tuple[ndarray, ndarray]]):
     def __len__(self) -> int:
         return len(self.train)
 
-    def __iter__(self) -> Iterable[Tuple[ndarray, ndarray]]:
+    def __iter__(self) -> Iterator[Tuple[ndarray, ndarray]]:
         return zip(self.train, self.attachment)
 
     def __repr__(self) -> str:
         return f'{type(self).__name__}(train={self.train!r}, attachment=' \
-               f'{self.attachment!r}, is_reversed={self.is_reversed!r})'
+               f'{self.attachment!r})'
 
     def __str__(self) -> str:
         return f'{type(self).__name__}(train={self.train}, attachment=' \
-               f'{self.attachment}, is_reversed={self.is_reversed})'
+               f'{self.attachment})'

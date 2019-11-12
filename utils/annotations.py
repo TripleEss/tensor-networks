@@ -3,7 +3,7 @@ from typing import *
 from numpy import ndarray
 
 __all__ = (
-    'List', 'Tuple', 'Iterable', 'Optional', 'Union', 'Iterator', 'Sequence', 'overload',
+    'List', 'Tuple', 'Iterable', 'Optional', 'Union', 'Iterator', 'Sequence', 'overload', 'Any',
     'ndarray',
     'SVD', 'AbsColor', 'PartialColor'
 )
