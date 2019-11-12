@@ -131,8 +131,8 @@ class AttachedTensorTrain(Sequence[Tuple[ndarray, ndarray]]):
             return type(self)(self.train[item], self.attachment[item])
         return self.train[item], self.attachment[item]
 
-    def __reversed__(self) -> 'AttachedTensorTrain':
-        return self[::-1]
+    def __reversed__(self) -> Iterator[Tuple[ndarray, ndarray]]:
+        return iter(self[::-1])
 
     def __len__(self) -> int:
         return len(self.train)
