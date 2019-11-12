@@ -12,7 +12,6 @@ numpy = "*"
 matplotlib = "*"
 pillow-simd = "*"
 scipy = "*"
-xarray = "*"
 
 [requires]
 python_version = "3.7"
