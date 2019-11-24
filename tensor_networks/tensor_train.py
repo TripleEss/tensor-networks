@@ -4,12 +4,15 @@ from itertools import accumulate, chain
 
 import numpy as np
 
-from tensor_networks.misc import ArrayTuple
 from tensor_networks.svd import truncated_svd
-from utils.annotations import *
+from tensor_networks.utils.annotations import *
+from tensor_networks.utils.iteration import last
 
 
-class TensorTrain(ArrayTuple):
+class TensorTrain(ndarray):
+    def __new__(cls, *args, **kwargs):
+        return np.array(*args, **kwargs).view(cls)
+
     # TODO: figure out what to do with the label index (perhaps save it
     #  separately and consider whenever __getitem__ accesses the tensor with the label)
     def accumulate(self) -> Iterable[ndarray]:
@@ -24,7 +27,7 @@ class TensorTrain(ArrayTuple):
             The array obtained by contracting every tensor and the
             mock indices on the left- and right-most tensors
         """
-        return list(self.accumulate())[-1].trace(axis1=0, axis2=-1)
+        return last(self.accumulate()).trace(axis1=0, axis2=-1)
 
     @classmethod
     def decompose(cls, tensor: ndarray, d: int, chi: Optional[int] = None) -> 'TensorTrain':
@@ -59,6 +62,10 @@ class TensorTrain(ArrayTuple):
         train.append(t)
         return cls(train)
 
+    @property
+    def shape(self):
+        return [t.shape for t in self]
+
     @overload
     def __getitem__(self, item: int) -> ndarray:
         ...
@@ -71,11 +78,10 @@ class TensorTrain(ArrayTuple):
         result = super().__getitem__(item)
         if isinstance(item, slice) and item.step is not None and item.step < 0:
             # transpose bond indices if the train gets reversed
-            return type(self)(reversed([
+            return type(self)([
                 arr.transpose(-1, *list(range(1, arr.ndim - 1)), 0)
-                if arr.ndim > 1 else arr
                 for arr in result
-            ]))
+            ])
         return result
 
     def __reversed__(self) -> Iterator[ndarray]:
@@ -114,8 +120,8 @@ class AttachedTensorTrain(Sequence[Tuple[ndarray, ndarray]]):
         return accumulate(
             # chain start value with the rest of self
             chain([np.tensordot(*self[0], axes=([1], [attachment_index]))],
-                  self[1:]),
-            reduction_step,
+                  self[1:]),  # type: ignore[arg-type]
+            reduction_step,  # type: ignore[arg-type]
         )
 
     @overload

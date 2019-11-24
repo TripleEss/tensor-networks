@@ -3,7 +3,7 @@ import argparse
 import numpy as np
 from PIL import Image
 
-from utils.annotations import *
+from tensor_networks.utils.annotations import *
 from tensor_networks.svd import truncated_svd
 
 

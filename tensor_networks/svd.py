@@ -1,9 +1,9 @@
 import logging
-from utils.annotations import *
+from tensor_networks.utils.annotations import *
 
 import numpy as np
 
-from utils.annotations import SVD
+from tensor_networks.utils.annotations import SVD
 
 
 def truncate(u: ndarray, s: ndarray, v: ndarray, chi: int) -> SVD:

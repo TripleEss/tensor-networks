@@ -2,7 +2,7 @@ from math import pi, sin, cos
 
 import numpy as np
 
-from utils.annotations import *
+from tensor_networks.utils.annotations import *
 
 
 def color_abs_to_percentage(value: AbsColor) -> PartialColor:

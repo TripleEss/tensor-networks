@@ -1,5 +1,5 @@
 import logging
-from utils.annotations import *
+from tensor_networks.utils.annotations import *
 
 import numpy as np
 from scipy.sparse.linalg import svds as scipy_sparse_svd

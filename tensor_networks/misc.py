@@ -1,4 +1,4 @@
-from utils.annotations import *
+from tensor_networks.utils.annotations import *
 
 class ArrayTuple(Tuple[ndarray]):
     @property
@@ -39,3 +39,6 @@ class ArrayTuple(Tuple[ndarray]):
 
     def __repr__(self) -> str:
         return type(self).__name__ + super().__repr__()
+
+def reverse_transpose(arr: ndarray):
+    return arr.transpose(*reversed(list(range(arr.ndim))))
