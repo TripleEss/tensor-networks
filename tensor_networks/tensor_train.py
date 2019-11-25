@@ -10,8 +10,10 @@ from tensor_networks.utils.iteration import last
 
 
 class TensorTrain(ndarray):
-    def __new__(cls, *args, **kwargs):
-        return np.array(*args, **kwargs).view(cls)
+    def __new__(cls, tensors, **kwargs):
+        arr = np.empty([len(tensors)], dtype=object, **kwargs)
+        arr[:] = tensors
+        return arr.view(cls)
 
     # TODO: figure out what to do with the label index (perhaps save it
     #  separately and consider whenever __getitem__ accesses the tensor with the label)
@@ -114,12 +116,12 @@ class AttachedTensorTrain(Sequence[Tuple[ndarray, ndarray]]):
             return np.tensordot(
                 np.tensordot(result, new[0], axes=1),
                 new[1],
-                axes=([1], [attachment_index])
+                axes=(-2, attachment_index)
             )
 
         return accumulate(
             # chain start value with the rest of self
-            chain([np.tensordot(*self[0], axes=([1], [attachment_index]))],
+            chain([np.tensordot(*self[0], axes=(1, attachment_index))],
                   self[1:]),  # type: ignore[arg-type]
             reduction_step,  # type: ignore[arg-type]
         )
