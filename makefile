@@ -4,4 +4,10 @@ init:
 test:
 	pipenv run python -m pytest tests
 
-.PHONY: init test
+lint:
+	-flake8
+	mypy --namespace-packages tensor_networks/
+
+test-all: lint test
+
+.PHONY: test lint

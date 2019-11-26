@@ -1,70 +1,114 @@
-import math
 from functools import partial
-from itertools import accumulate, chain
+from itertools import accumulate
 
 import numpy as np
+from more_itertools import last  # type: ignore[import]
 
-from tensor_networks.svd import truncated_svd
+from tensor_networks.utils.tensors import transpose_bond_indices
 from tensor_networks.utils.annotations import *
-from tensor_networks.utils.iteration import last
 
 
 class TensorTrain(ndarray):
-    def __new__(cls, tensors, **kwargs):
-        arr = np.empty([len(tensors)], dtype=object, **kwargs)
-        arr[:] = tensors
+    def __new__(cls, cores, **kwargs):
+        if isinstance(cores, ndarray):
+            arr = cores
+        else:
+            arr = np.empty([len(cores)], dtype=object, **kwargs)
+            arr[:] = cores
         return arr.view(cls)
 
-    # TODO: figure out what to do with the label index (perhaps save it
-    #  separately and consider whenever __getitem__ accesses the tensor with the label)
-    def accumulate(self) -> Iterable[ndarray]:
+    def accumulate(self, **kwargs) -> Iterable[ndarray]:
         """
-        :return: The arrays obtained by consecutively contracting every tensor
+        :return:
+            The arrays obtained by consecutively contracting every tensor
+            over the bond indices
         """
-        return accumulate(self, partial(np.tensordot, axes=1))
+        return accumulate(self, partial(np.tensordot, axes=1, **kwargs))
 
-    def reduce(self) -> ndarray:
+    def reduce(self, **kwargs) -> ndarray:
+        """
+        :return:
+            The array obtained by contracting every tensor
+            over the bond indices
+        """
+        return last(self.accumulate(**kwargs))
+
+    def reduce_fully(self, **kwargs) -> ndarray:
         """
         :return:
             The array obtained by contracting every tensor and the
-            mock indices on the left- and right-most tensors
+            outer indices on the left- and right-most tensors
         """
-        return last(self.accumulate()).trace(axis1=0, axis2=-1)
+        return self.reduce(**kwargs).trace(axis1=0, axis2=-1)
 
-    @classmethod
-    def decompose(cls, tensor: ndarray, d: int, chi: Optional[int] = None) -> 'TensorTrain':
+    def sweep(self, optimizer: Callable[[ndarray], ndarray],
+              svd: Callable[..., SVD],
+              label_index: int = 0, direction: int = 1) -> None:
         """
-        Decompose a tensor into the tensor train format using SVD
+        Sweep back and forth through the train and optimize the cores
 
-        :param tensor: The tensor to decompose
-        :param chi: How many elements to keep when splitting the tensor using SVD
-        :param d: The dimension of the spatial indices
-        :return: The tensor in tensor train format
+        :param optimizer: The function which actually optimizes the cores
+        :param svd: The function used for singular value decomposition
+        :param label_index: The index at which we start optimizing
+        :param direction: The direction in which we start sweeping
         """
-        # Amount of elements in the tensor: $d^N$ (= tensor.size)
-        # $\Longleftrightarrow N = log_d(d^N)$
-        n = int(math.log(tensor.size, d))
-        # Add a mock index on the left for the first iteration
-        t = tensor.reshape(1, tensor.size)
+        assert direction in (-1, 1)
+        next_index = label_index + direction
+        accumulated_left = list(self[:min(label_index, next_index)]
+                                .accumulate())
+        accumulated_right = list(self[max(label_index, next_index) + 1::-1]
+                                 .accumulate())
+        while True:
+            next_index = label_index + direction
+            if next_index > len(self) - 1:
+                direction *= -1
+                next_index = label_index + direction
+
+            left_index = min(label_index, next_index)
+            right_index = max(label_index, next_index)
+            to_optimize = TensorTrain([
+                accumulated_left[-1],
+                self[left_index], self[right_index],
+                accumulated_right[-1]
+            ]).reduce()
+            optimized = optimizer(to_optimize)
+            u, s, v = svd(optimized)
+            self[label_index] = u
+            self[next_index] = np.diag(s) @ v
+
+            if direction == 1:
+                accumulated_left.append(np.tensordot(
+                    accumulated_left[-1],
+                    self[label_index],
+                    axes=1
+                ))
+                accumulated_right.pop()
+            elif direction == -1:
+                accumulated_right.append(np.tensordot(
+                    accumulated_right[-1],
+                    self[label_index],
+                    axes=(-1, -1)
+                ))
+                accumulated_left.pop()
+            # point index to the tensor which now has the label index
+            label_index = next_index
+
+    def attach(self, attachments: Iterable[ndarray],
+               attachment_index: int = 0) -> 'TensorTrain':
+        """
+        :param attachments:
+        :param attachment_index:
+            The index each element of the attachments will get contracted over
+        :return:
+            Every core contracted with its respective attachment
+        """
         train = []
-        for i in range(1, n):
-            # Reshape the tensor into a matrix (to calculate the SVD)
-            t.shape = (d * t.shape[0], d ** (n - i))
-            # Split the tensor using Singular Value Decomposition (SVD)
-            u, s, v = truncated_svd(t, chi)
-            # Split the first index of the matrix u
-            u.shape = (u.shape[0] // d, d, u.shape[1])
-            # u is part of the tensor train
-            train.append(u)
-            # Continue, using the contraction of s and v as the remaining tensor
-            t = np.diag(s) @ v
-        # The remaining matrix is the right-most tensor in the tensor train
-        # and gets a mock index on the right for consistency
-        t.shape = (*t.shape, 1)
-        train.append(t)
-        return cls(train)
+        for core, attached in zip(self, attachments):
+            train.append(np.tensordot(core, attached,
+                                      axes=(1, attachment_index)))
+        return type(self)(train)
 
-    @property
+    @property  # type: ignore[misc]
     def shape(self):
         return [t.shape for t in self]
 
@@ -80,78 +124,14 @@ class TensorTrain(ndarray):
         result = super().__getitem__(item)
         if isinstance(item, slice) and item.step is not None and item.step < 0:
             # transpose bond indices if the train gets reversed
-            return type(self)([
-                arr.transpose(-1, *list(range(1, arr.ndim - 1)), 0)
-                for arr in result
-            ])
+            return type(self)([transpose_bond_indices(arr) for arr in result])
         return result
 
     def __reversed__(self) -> Iterator[ndarray]:
         return iter(self[::-1])
 
+    def __str__(self):
+        return '[' + ' '.join(str(t) for t in self) + ']'
 
-class AttachedTensorTrain(Sequence[Tuple[ndarray, ndarray]]):
-    def __init__(self, train: TensorTrain, attachment: Sequence[ndarray]):
-        """
-        :param train: TensorTrain
-        :param attachment:
-            A list of arrays.
-            Each element of self will be contracted with the corresponding element of others
-        """
-        assert len(train) == len(attachment)
-        self.train = train
-        self.attachment = attachment
-
-    def accumulate(self, attachment_index: int = 0) -> Iterable[ndarray]:
-        # TODO: what to do with the mock indices
-        """
-        :param attachment_index:
-            The index each element of others will get contracted over
-        :return:
-            The array obtained by consecutively contracting self while contracting each
-            intermediate result with the corresponding element of others
-        """
-
-        def reduction_step(result: ndarray, new: Tuple[ndarray, ndarray]) -> ndarray:
-            return np.tensordot(
-                np.tensordot(result, new[0], axes=1),
-                new[1],
-                axes=(-2, attachment_index)
-            )
-
-        return accumulate(
-            # chain start value with the rest of self
-            chain([np.tensordot(*self[0], axes=(1, attachment_index))],
-                  self[1:]),  # type: ignore[arg-type]
-            reduction_step,  # type: ignore[arg-type]
-        )
-
-    @overload
-    def __getitem__(self, item: int) -> Tuple[ndarray, ndarray]:
-        ...
-
-    @overload
-    def __getitem__(self, item: slice) -> 'AttachedTensorTrain':
-        ...
-
-    def __getitem__(self, item):
-        if isinstance(item, slice):
-            return type(self)(self.train[item], self.attachment[item])
-        return self.train[item], self.attachment[item]
-
-    def __reversed__(self) -> Iterator[Tuple[ndarray, ndarray]]:
-        return iter(self[::-1])
-
-    def __len__(self) -> int:
-        return len(self.train)
-
-    def __iter__(self) -> Iterator[Tuple[ndarray, ndarray]]:
-        return zip(self.train, self.attachment)
-
-    def __repr__(self) -> str:
-        return f'{type(self).__name__}(train={self.train!r}, attachment=' \
-               f'{self.attachment!r})'
-
-    def __str__(self) -> str:
-        return f'{type(self).__name__}(train={self.train}, attachment=' \
-               f'{self.attachment})'
+    def __repr__(self):
+        return f'{type(self).__name__}({self})'

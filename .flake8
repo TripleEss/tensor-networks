@@ -1,0 +1,6 @@
+[flake8]
+ignore =
+    # star imports
+    F403, F405
+    # redefinitions used for overloading
+    F811

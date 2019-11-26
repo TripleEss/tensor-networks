@@ -2,7 +2,8 @@ import numpy as np
 import pytest
 from pytest import approx
 
-from tensor_networks.misc import reverse_transpose
+from tensor_networks.decomposition import decompose
+from tensor_networks.utils.tensors import reverse_transpose
 from tensor_networks.tensor_train import TensorTrain
 from tests.helpers import constant_fixture
 
@@ -20,7 +21,7 @@ chi = constant_fixture(params=[2])
 
 @pytest.fixture(ids=data_ids)
 def tt(arr: np.ndarray, d: int, chi: int):
-    return TensorTrain.decompose(arr, d=d, chi=chi)
+    return TensorTrain(decompose(arr, d, chi=chi))
 
 
 def test_shape(tt, d, chi):
@@ -51,7 +52,7 @@ def test_accumulate(tt):
 
 @pytest.fixture(ids=data_ids)
 def reduced(tt):
-    return tt.reduce()
+    return tt.reduce_fully()
 
 
 def test_reassemble(arr, d, reduced):
@@ -65,5 +66,5 @@ def test_reversed(tt, reduced):
     rev = tt[::-1]
     for x, y in zip(reversed(tt), rev):
         assert (x == y).all()
-    rev_reassembled = rev.reduce()
+    rev_reassembled = rev.reduce_fully()
     assert reverse_transpose(rev_reassembled) == approx(reduced)

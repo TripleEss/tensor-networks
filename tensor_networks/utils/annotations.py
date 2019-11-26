@@ -2,8 +2,10 @@ from typing import *
 
 from numpy import ndarray
 
+
 __all__ = (
-    'List', 'Tuple', 'Iterable', 'Optional', 'Union', 'Iterator', 'Sequence', 'overload', 'Any', 'TypeVar',
+    'List', 'Tuple', 'Iterable', 'Optional', 'Union', 'Iterator', 'Sequence',
+    'overload', 'Any', 'TypeVar', 'Callable',
     'ndarray',
     'SVD', 'AbsColor', 'PartialColor'
 )

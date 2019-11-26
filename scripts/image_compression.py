@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 import argparse
+from functools import partial
+
 import numpy as np
 from PIL import Image
 
@@ -13,7 +15,7 @@ def img_to_array(path: str) -> ndarray:
 
 
 def compress(array: ndarray) -> ndarray:
-    u, s, v = truncated_svd(array, max(array.shape))
+    u, s, v = truncated_svd(array, chi=max(array.shape))
     return (u @ np.diag(s) @ v).astype(array.dtype)
 
 

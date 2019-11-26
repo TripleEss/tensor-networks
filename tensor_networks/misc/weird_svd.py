@@ -1,8 +1,10 @@
+# flake8: noqa
 import logging
-from tensor_networks.utils.annotations import *
 
 import numpy as np
 from scipy.sparse.linalg import svds as scipy_sparse_svd
+
+from tensor_networks.utils.annotations import *
 
 
 def sparse_svd(a: ndarray) -> Tuple[ndarray, ndarray, ndarray]:

@@ -1,31 +1,30 @@
 import logging
-from tensor_networks.utils.annotations import *
 
 import numpy as np
 
+from tensor_networks.utils.annotations import *
 from tensor_networks.utils.annotations import SVD
 
 
-def truncate(u: ndarray, s: ndarray, v: ndarray, chi: int) -> SVD:
-    if chi < 0:
+def truncated_svd(matrix: ndarray, chi: Optional[int] = None,
+                  normalize: bool = True) -> SVD:
+    u, s, v = np.linalg.svd(matrix, full_matrices=False)
+    _log_msg = f'{matrix.shape} --SVD--> {u.shape} {s.shape} {v.shape}'
+    if chi is None:
+        pass
+    elif chi < 0:
         raise ValueError('chi has to be at least 0')
-    if chi > s.size:
+    elif chi > s.size:
         # Pad with zeros
-        return (
+        u, s, v = (
             np.pad(u, ((0, 0), (0, chi - u.shape[1]))),
             np.pad(s, (0, chi - s.size)),
             np.pad(v, ((0, chi - v.shape[0]), (0, 0))),
         )
-    return u[:, :chi], s[:chi], v[:chi, :]
-
-
-def truncated_svd(tensor: ndarray, chi: Optional[int], truncator=truncate) -> SVD:
-    u, s, v = np.linalg.svd(tensor, full_matrices=False)
-    _log_msg = f'{tensor.shape} --SVD--> {u.shape} {s.shape} {v.shape}'
-    if chi is None:
-        logging.debug(_log_msg)
-        return u, s, v
-    u, s, v = truncator(u, s, v, chi)
-    _log_msg += f' --truncated/padded--> {u.shape} {s.shape} {v.shape}'
-    logging.debug(_log_msg)
+    else:
+        u, s, v = u[:, :chi], s[:chi], v[:chi, :]
+        if normalize:
+            s = s * (np.linalg.norm(s) / np.linalg.norm(matrix))
+    logging.debug(_log_msg + f' --truncated/padded-->'
+                             f' {u.shape} {s.shape} {v.shape}')
     return u, s, v
