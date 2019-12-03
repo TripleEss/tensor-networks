@@ -1,8 +1,9 @@
-from tensor_networks.utils.annotations import *
+from tensor_networks.annotations import *
 
 
 def reverse_transpose(arr: ndarray) -> ndarray:
     return arr.transpose(*reversed(list(range(arr.ndim))))
+
 
 def transpose_bond_indices(arr: ndarray) -> ndarray:
     if arr.ndim < 2:

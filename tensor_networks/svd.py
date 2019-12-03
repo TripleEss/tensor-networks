@@ -2,14 +2,16 @@ import logging
 
 import numpy as np
 
-from tensor_networks.utils.annotations import *
-from tensor_networks.utils.annotations import SVD
+from tensor_networks.annotations import *
 
 
-def truncated_svd(matrix: ndarray, chi: Optional[int] = None,
-                  normalize: bool = True) -> SVD:
+def truncated_svd(matrix: ndarray,
+                  chi: Union[int, Callable[SVD, int], None] = None,
+                  normalize: bool = True) -> SVDTuple:
     u, s, v = np.linalg.svd(matrix, full_matrices=False)
     _log_msg = f'{matrix.shape} --SVD--> {u.shape} {s.shape} {v.shape}'
+    if callable(chi):
+        chi = chi(u, s, v)
     if chi is None:
         pass
     elif chi < 0:

@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 import argparse
-from functools import partial
 
 import numpy as np
 from PIL import Image
 
-from tensor_networks.utils.annotations import *
+from tensor_networks.annotations import *
 from tensor_networks.svd import truncated_svd
 
 

@@ -4,7 +4,7 @@ import logging
 import numpy as np
 from scipy.sparse.linalg import svds as scipy_sparse_svd
 
-from tensor_networks.utils.annotations import *
+from tensor_networks.annotations import *
 
 
 def sparse_svd(a: ndarray) -> Tuple[ndarray, ndarray, ndarray]:

@@ -2,21 +2,25 @@ import math
 
 import numpy as np
 
+from tensor_networks.annotations import *
 from tensor_networks.svd import truncated_svd
-from tensor_networks.utils.annotations import *
 
 
-def decompose(tensor: ndarray, d: int,
-              svd: Callable[..., SVD] = truncated_svd, **svd_kwargs
-              ) -> List[ndarray]:
+_T = TypeVar('_T')
+
+
+def decompose(cls: Callable[[List[ndarray]], _T], tensor: ndarray, d: int,
+              svd: Callable[..., SVDTuple] = truncated_svd,
+              **svd_kwargs) -> _T:
     """
     Decompose a tensor into the tensor train format using SVD
 
+    :param cls: A class that wraps the tensor train format
     :param tensor: The tensor to decompose
     :param d: The dimension of the bond indices
     :param svd: The function used for singular value decomposition
     :param svd_kwargs:
-        Any keyworded args are passed through to the svd function
+        Any keyworded arguments are passed through to the svd function
         (for convenience)
     :return: The tensor in tensor train format
     """
@@ -41,4 +45,4 @@ def decompose(tensor: ndarray, d: int,
     # and gets a mock index on the right for consistency
     t.shape = (*t.shape, 1)
     train.append(t)
-    return train
+    return cls(train)

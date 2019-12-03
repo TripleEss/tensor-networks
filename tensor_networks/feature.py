@@ -2,7 +2,7 @@ from math import pi, sin, cos
 
 import numpy as np
 
-from tensor_networks.utils.annotations import *
+from tensor_networks.annotations import *
 
 
 def color_abs_to_percentage(value: AbsColor) -> PartialColor:
@@ -11,7 +11,7 @@ def color_abs_to_percentage(value: AbsColor) -> PartialColor:
 
 def feature(percentage: PartialColor) -> ndarray:
     """
-    :return: [black value, white value] with black value + white value == 1
+    :return: [black value, white value] whtopith black value + white value == 1
     """
     return np.array([cos(pi / 2 * percentage), sin(pi / 2 * percentage)])
 
