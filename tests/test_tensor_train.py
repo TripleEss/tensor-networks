@@ -15,15 +15,15 @@ data_ids = [str(x) for x in range(len(data_arrays))]
 
 arr = constant_fixture(params=data_arrays, ids=data_ids)
 d = constant_fixture(params=data_ds, ids=data_ids)
-chi = constant_fixture(params=[2])
+max_chi = constant_fixture(params=[2])
 
 
 @pytest.fixture(ids=data_ids)
-def tt(arr: np.ndarray, d: int, chi: int):
-    return TensorTrain.decompose(arr, d, chi=chi)
+def tt(arr: np.ndarray, d: int, max_chi: int):
+    return TensorTrain.decompose(arr, d, max_chi=max_chi)
 
 
-def test_shape(tt, d, chi):
+def test_shape(tt, d, max_chi):
     for s in tt.shape:
         # general shape
         assert len(s) == 3
@@ -31,9 +31,9 @@ def test_shape(tt, d, chi):
         assert s[1] == d
     # bond indices
     for s in tt.shape[1:]:
-        assert s[0] == chi
+        assert s[0] == max_chi
     for s in tt.shape[:-1]:
-        assert s[-1] == chi
+        assert s[-1] == max_chi
     # mock bond indices
     assert tt.shape[0][0] == 1
     assert tt.shape[-1][-1] == 1

@@ -14,7 +14,7 @@ def img_to_array(path: str) -> ndarray:
 
 
 def compress(array: ndarray) -> ndarray:
-    u, s, v = truncated_svd(array, chi=max(array.shape))
+    u, s, v = truncated_svd(array, max_chi=max(array.shape))
     return (u @ np.diag(s) @ v).astype(array.dtype)
 
 
