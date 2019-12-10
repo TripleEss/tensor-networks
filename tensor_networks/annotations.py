@@ -13,11 +13,13 @@ __all__ = (
     'ndarray',
 
     # internal
-    'SVDTuple', 'SVD', 'AbsColor', 'PartialColor', 'TTrain',
+    'SVDTuple', 'SVDCallable', 'SVDToInt', 'AbsColor', 'PartialColor',
+    'TTrain',
 )
 
 SVDTuple = Tuple[ndarray, ndarray, ndarray]
-SVD = [ndarray, ndarray, ndarray]
+SVDCallable = Callable[..., SVDTuple]
+SVDToInt = Callable[[ndarray, ndarray, ndarray], int]
 AbsColor = int
 PartialColor = float
 if TYPE_CHECKING:

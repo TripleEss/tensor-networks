@@ -1,72 +1,117 @@
-from itertools import islice
+from itertools import count
 
 import numpy as np
 
 from tensor_networks.annotations import *
-from tensor_networks.contraction import contract, tensor_reduce
+from tensor_networks.contraction import contract
+from tensor_networks.inputs import Input
 from tensor_networks.svd import truncated_svd
 
 
+def pairwise_slices(lower_bound, upper_bound: int, start: int = 0,
+                    direction: int = 1) -> Generator[slice, None, None]:
+    # TODO python negative step weirdness
+    i1, i2 = sorted((start, start + 2 * direction))
+    assert lower_bound <= i1 < i2 <= upper_bound
+    while True:
+        yield slice(i1, i2, direction)
+        i1 += direction
+        i2 += direction
+        if i1 < lower_bound or i2 > upper_bound:
+            direction *= -1
+            i1 += 2 * direction
+            i2 += 2 * direction
+
+
 def sweep(tensor_train: TTrain,
-          attachments: Sequence[ndarray],
+          input_: Input,
           label_index: int = 0,
           direction: int = 1,
-          svd: Callable[..., SVDTuple] = truncated_svd,
+          svd: SVDCallable = truncated_svd,
           ) -> Generator[Tuple[ndarray, ndarray], ndarray, None]:
     """
     Sweep back and forth through the train and optimize the cores
 
-    :param tensor_train: the train
-    :param attachments:
+    :param tensor_train: The train to optimize
+    :param input_: TODO
     :param label_index: The index at which we start optimizing
     :param direction: The direction in which we start sweeping
     :param svd: The function used for singular value decomposition
     """
     assert direction in (-1, 1)
-    assert len(attachments) == len(tensor_train)
+    assert len(input_) == len(tensor_train)
 
-    left_index, right_index = [label_index, label_index + direction][::direction]
-    accumulated_left = list(tensor_train[:left_index]
-                            .attach(attachments[:left_index])
+    left_i, right_i = sorted((label_index, label_index + direction))
+    accumulated_left = list(tensor_train[:left_i]
+                            .attach(input_[:left_i])
                             .accumulate())
-    accumulated_right = list(tensor_train[right_index + 1::-1]
-                             .attach(attachments[right_index + 1:])
+    accumulated_right = list(tensor_train[:right_i:-1]
+                             .attach(input_[right_i + 1:])
                              .accumulate())
 
-    while True:
-        left_index += direction
-        right_index += direction
-        if left_index < 0 or right_index >= len(tensor_train):
-            direction *= -1
-            left_index += 2 * direction
-            right_index += 2 * direction
+    for slc in pairwise_slices(0, len(tensor_train), start=label_index):
+        direction = slc.step
+        label_core, other_core = tensor_train[slc]
+        label_input, other_input = input_[slc]
+        label_accum, other_accum = (accumulated_left,
+                                    accumulated_right)[::direction]
 
-        to_optimize = contract(tensor_train[left_index], tensor_train[right_index])
-        output = tensor_reduce([
-            to_optimize, accumulated_right[-1], attachments[right_index],
-            attachments[left_index], accumulated_left[-1]
-        ])
-        optimized = to_optimize + (yield to_optimize, output)
+        to_optimize = contract(label_core, other_core)
+        # TODO where is the label index
+        local_input = contract(label_input, other_input, axes=0)
+        if label_accum:
+            local_input = contract(label_accum[-1], local_input, axes=0)
+        else:
+            local_input.shape = (1,) + local_input.shape
+        if other_accum:
+            local_input = contract(local_input, other_accum[-1], axes=0)
+        else:
+            local_input.shape = local_input.shape + (1,)
+        output = contract(
+            to_optimize, local_input,
+            axes=(list(range(len(to_optimize.shape))),
+                  (list(range(len(local_input.shape)))))
+        )
+        optimized = to_optimize + (yield output, local_input)
 
         u, s, v = svd(optimized)
-        label_index, other_index = [left_index, right_index][::direction]
-        tensor_train[label_index] = u
-        tensor_train[other_index] = np.diag(s) @ v
+        label_core[:], other_core[:] = u, np.diag(s) @ v
 
-        if direction == 1:
-            accumulated_left.append(contract(accumulated_left[-1],
-                                             tensor_train[label_index]))
-            accumulated_right.pop()
-        elif direction == -1:
-            accumulated_right.append(np.tensordot(accumulated_right[-1],
-                                                  tensor_train[label_index],
-                                                  axes=(-1, -1)))
-            accumulated_left.pop()
+        label_accum.append(contract(*(label_accum[-1], label_core)[::direction]))
+        other_accum.pop()
 
 
-def sweep_until(*args, iterations: Optional[int] = None, **kwargs):
+def sweep_simultaneously(
+        tensor_train: TTrain,
+        inputs: Iterable[Input],
+        **kwargs,
+) -> Generator[Generator[ndarray, ndarray, None], None, None]:
+    isweeps = [sweep(tensor_train, inp, **kwargs) for inp in inputs]
+    outputs = [next(isweep) for isweep in isweeps]
+    while True:
+        def optimizations():
+            for i, isweep in isweeps:
+                update = yield outputs[i]
+                outputs[i] = isweep.send(update)
+
+        yield optimizations()
+
+
+def sweep_simultaneously_until(tensor_train: TTrain,
+                               inputs: Sequence[Input],
+                               iterations: Optional[int] = None,
+                               **kwargs) -> None:
     # TODO: other break conditions
-    return islice(sweep(*args, **kwargs), stop=iterations)
+    counter = range(iterations) if iterations else count()
+    isweep = sweep_simultaneously(tensor_train, inputs, **kwargs)
+    outputs = list(next(isweep))
+    for optimizations, _ in zip(isweep, counter):
+        for i in range(len(outputs)):
+            outputs[i] = optimizations.send(adjust(outputs, inputs[i]))
+
+
+def adjust(outputs: Iterable[Tuple[ndarray, ndarray]], ideal: ndarray) -> ndarray:
+    return sum(contract((ideal - out[0]), out[1], axes=0) for out in outputs)
 
 
 def cost(labels1: ndarray, labels2: ndarray) -> float:

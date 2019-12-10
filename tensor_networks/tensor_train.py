@@ -8,14 +8,23 @@ from tensor_networks.annotations import *
 from tensor_networks.transposition import transpose_bond_indices
 
 
-class TensorTrain(ndarray):
-    # these functions are added as methods for convenience
+class TensorTrain(ndarray, Sequence[ndarray]):
     attach = classification.attach
-    accumulate = contraction.tensor_accumulate
-    reduce = contraction.tensor_reduce
-    reduce_fully = contraction.tensor_reduce_fully
     decompose = classmethod(decomposition.decompose)
-    sweep = training.sweep
+
+    def accumulate(self, **kwargs) -> Iterable[ndarray]:
+        return contraction.contractions(*self, **kwargs)
+
+    def reduce(self, **kwargs) -> ndarray:
+        return contraction.contract(*self, **kwargs)
+
+    def reduce_fully(self, **kwargs) -> ndarray:
+        """
+        :return:
+            The array obtained by contracting every tensor and the
+            outer indices on the left- and right-most tensors
+        """
+        return self.reduce(**kwargs).trace(axis1=0, axis2=-1)
 
     def __new__(cls, cores, **kwargs):
         if isinstance(cores, ndarray):

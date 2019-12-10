@@ -10,7 +10,7 @@ standard_svd = partial(np.linalg.svd, full_matrices=False)
 
 
 def truncated_svd(matrix: ndarray, *,
-                  compute_chi: Optional[Callable[SVD, int]] = None,
+                  compute_chi: Optional[SVDToInt] = None,
                   max_chi: Optional[int] = None,
                   normalize: bool = True) -> SVDTuple:
     u, s, v = standard_svd(matrix)

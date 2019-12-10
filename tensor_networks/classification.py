@@ -3,7 +3,7 @@ import numpy as np
 from tensor_networks.annotations import *
 
 
-_T = TypeVar('_T', bound=ndarray)
+_T = TypeVar('_T', bound=TTrain)
 
 
 def attach(tensor_train: _T, attachments: Iterable[ndarray]) -> _T:

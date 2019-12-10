@@ -10,8 +10,7 @@ _T = TypeVar('_T')
 
 
 def decompose(cls: Callable[[List[ndarray]], _T], tensor: ndarray, d: int,
-              svd: Callable[..., SVDTuple] = truncated_svd,
-              **svd_kwargs) -> _T:
+              svd: SVDCallable = truncated_svd, **svd_kwargs) -> _T:
     """
     Decompose a tensor into the tensor train format using SVD
 
