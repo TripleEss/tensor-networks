@@ -7,19 +7,20 @@ __all__ = (
     # typing
     'List', 'Tuple', 'Iterable', 'Optional', 'Union', 'Iterator', 'Sequence',
     'overload', 'Any', 'TypeVar', 'Callable', 'Type', 'TYPE_CHECKING',
-    'Generator', 'Reversible',
+    'Generator', 'Reversible', 'MutableSequence',
 
     # external
     'ndarray',
 
     # internal
     'SVDTuple', 'SVDCallable', 'SVDToInt', 'AbsColor', 'PartialColor',
-    'TTrain',
+    'TTrain', 'Updater',
 )
 
 SVDTuple = Tuple[ndarray, ndarray, ndarray]
 SVDCallable = Callable[..., SVDTuple]
 SVDToInt = Callable[[ndarray, ndarray, ndarray], int]
+Updater = Callable[[Iterable[ndarray], Iterable[ndarray]], ndarray]
 AbsColor = int
 PartialColor = float
 if TYPE_CHECKING:

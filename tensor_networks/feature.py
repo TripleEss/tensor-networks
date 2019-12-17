@@ -17,6 +17,10 @@ def feature(percentage: PartialColor) -> ndarray:
     return np.array([cos(pi / 2 * percentage), sin(pi / 2 * percentage)])
 
 
+def label_to_vec(label: int):
+    return np.array(label * [0] + [1] + (9 - label) * [0])
+
+
 def img_feature(values: ndarray, label) -> Input:
     return Input(list(map(feature, map(color_abs_to_percentage, values))),
-                 label=label)
+                 label=label_to_vec(label))

@@ -20,7 +20,8 @@ max_chi = constant_fixture(params=[2])
 
 @pytest.fixture(ids=data_ids)
 def tt(arr: np.ndarray, d: int, max_chi: int):
-    return TensorTrain.decompose(arr, d, max_chi=max_chi)
+    t = TensorTrain.decompose(arr, d, max_chi=max_chi)
+    return t
 
 
 def test_shape(tt, d, max_chi):
@@ -41,17 +42,17 @@ def test_shape(tt, d, max_chi):
 
 @pytest.fixture(ids=data_ids)
 def accumulated(tt):
-    return list(tt.accumulate())
+    return list(tt.contractions())
 
 
 def test_accumulate(tt):
-    for l, t in zip(range(3, len(tt)), tt.accumulate()):
+    for l, t in zip(range(3, len(tt)), tt.contractions()):
         assert len(t.shape) == l
 
 
 @pytest.fixture(ids=data_ids)
 def reduced(tt):
-    return tt.reduce_fully()
+    return tt.contract(fully=True)
 
 
 def test_reassemble(arr, d, reduced):
@@ -65,5 +66,5 @@ def test_reversed(tt, reduced):
     rev = tt[::-1]
     for x, y in zip(reversed(tt), rev):
         assert (x == y).all()
-    rev_reassembled = rev.reduce_fully()
+    rev_reassembled = rev.contract(fully=True)
     assert reverse_transpose(rev_reassembled) == approx(reduced)
