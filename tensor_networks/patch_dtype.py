@@ -9,7 +9,8 @@ def as_dtype(dtype: np.dtype):
     def decorator(array_constructor: Callable[..., Array]):
         @wraps(array_constructor)
         def changed_dtype(*args, **kwargs):
-            kwargs.setdefault('dtype', dtype)
+            if len(args) < 2:
+                kwargs.setdefault('dtype', dtype)
             return array_constructor(*args, **kwargs)
 
         return changed_dtype
@@ -22,3 +23,4 @@ def patch_dtype(dtype: np.dtype):
     np.array = decorator(np.array)
     np.ones = decorator(np.ones)
     np.zeros = decorator(np.zeros)
+    np.full = decorator(np.full)
