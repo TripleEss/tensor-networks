@@ -1,6 +1,7 @@
 from functools import partial
 
 import numpy as np
+from more_itertools import consume
 from scipy.io import loadmat
 
 from tensor_networks.classification import cost, classify
@@ -8,7 +9,7 @@ from tensor_networks.feature import img_feature
 from tensor_networks.patch_dtype import patch_dtype
 from tensor_networks.svd import truncated_svd
 from tensor_networks.tensor_train import TensorTrain
-from tensor_networks.training import sweep_until
+from tensor_networks.training import sweep
 
 
 # patch arrays to be float32 to enhance performance
@@ -42,5 +43,7 @@ def test():
 # optimize
 test()
 print('-------------------------')
-sweep_until(weights, train_inputs, iterations=784, svd=partial(truncated_svd, max_chi=20))
-test()
+sweeper = sweep(weights, train_inputs, svd=partial(truncated_svd, max_chi=20))
+for _ in range(14):
+    consume(sweeper, 56)
+    test()

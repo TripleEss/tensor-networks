@@ -17,7 +17,7 @@ def sparse_svd(a: Array) -> Tuple[Array, Array, Array]:
     return u, s, v
 
 
-def robust_svd(a: Array, tolerance: float = 0.0 * 1e-14) -> Tuple[Array, Array, Array]:
+def robust_svd(a: Array, tolerance: float = 1.0 * 1e-14) -> Tuple[Array, Array, Array]:
     try:
         u, s, v = np.linalg.svd(a, full_matrices=False)
     except np.linalg.LinAlgError as e1:
