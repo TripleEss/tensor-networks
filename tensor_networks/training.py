@@ -26,11 +26,12 @@ def swing_pairwise(seq: Sequence[_T], start: int = 0, direction: int = 1
 
 def update(ideals: Iterable[Array], outputs: Iterable[Array],
            inputs: Iterable[Array]) -> Array:
-    # TODO only use a small multiple of result
-    result = - 0.000000001 * sum(contract((idl - out), inp, axes=0).transpose(1, 2, 0, 3, 4)
-                                 for idl, out, inp in zip(ideals, outputs, inputs))
-    assert isinstance(result, Array)
-    return result
+    full_update = sum(contract((idl - out), inp, axes=0).transpose(1, 2, 0, 3, 4)
+                      for idl, out, inp in zip(ideals, outputs, inputs))
+    # TODO make factor a variable
+    small_update = - 0.000000001 * full_update
+    assert isinstance(small_update, Array)
+    return small_update
 
 
 def sweep(ttrain: TensorTrain, inputs: Sequence[Input], label_index: int = 0,
