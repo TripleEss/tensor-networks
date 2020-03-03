@@ -27,8 +27,8 @@ def tee_zip_async(seq: Sequence[_T], start: int = 0, direction: int = 1
 def update(ideals: Iterable[Array], outputs: Iterable[Array],
            inputs: Iterable[Array]) -> Array:
     # TODO only use a small multiple of result
-    result = sum(contract((idl - out), inp, axes=0).transpose(1, 2, 0, 3, 4)
-                 for idl, out, inp in zip(ideals, outputs, inputs))
+    result = - 0.000000001 * sum(contract((idl - out), inp, axes=0).transpose(1, 2, 0, 3, 4)
+                                 for idl, out, inp in zip(ideals, outputs, inputs))
     assert isinstance(result, Array)
     return result
 
@@ -86,6 +86,7 @@ def sweep(ttrain: TensorTrain, inputs: Sequence[Input], label_index: int = 0,
                                     axes=([0, 1, 3, 4], [0, 1, 2, 3])))
 
         optimized = to_optimize + updater(outputs, local_inputs)
+        optimized *= np.linalg.norm(to_optimize) / np.linalg.norm(optimized)
         label_core, other_core = split(optimized, before_index=2, svd=svd)
         # transpose label index
         other_core = other_core.transpose(0, 2, 1, 3)
