@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from pytest import approx
 
-from tensor_networks.tensor_train import TensorTrain
+from tensor_networks.decomposition import decompose
 from tensor_networks.transposition import reverse_transpose
 from tests.helpers import constant_fixture
 
@@ -20,7 +20,7 @@ max_chi = constant_fixture(params=[2])
 
 @pytest.fixture(ids=data_ids)
 def tt(arr: np.ndarray, d: int, max_chi: int):
-    t = TensorTrain.decompose(arr, d, max_chi=max_chi)
+    t = decompose(arr, d, max_chi=max_chi)
     return t
 
 
