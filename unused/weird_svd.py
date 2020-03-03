@@ -23,7 +23,7 @@ def robust_svd(a: Array, tolerance: float = 0.0 * 1e-14) -> Tuple[Array, Array, 
     except np.linalg.LinAlgError as e1:
         logging.warning(f'Ran into {type(e1).__name__}: {e1}... transposing and retrying...')
         try:
-            # How is this supposed to help?
+            # TODO: When is this supposed to help?
             v, s, u = np.linalg.svd(np.transpose(a), full_matrices=False)
             u = np.transpose(u)
             v = np.transpose(v)
@@ -32,7 +32,7 @@ def robust_svd(a: Array, tolerance: float = 0.0 * 1e-14) -> Tuple[Array, Array, 
             logging.warning(f'Ran into {type(e2).__name__}: {e2}... calling sparse code...')
             u, s, v = sparse_svd(a)
             logging.debug('Sparse code succeeded!')
-    # The next lines break some decompositions. What's their purpose?
+    # TODO: The next lines break some decompositions. Investigate their purpose
     u = u[:, ~np.isclose(s, 0.0, atol=tolerance)]
     s = s[~np.isclose(s, 0.0, atol=tolerance)]
     v = v[np.transpose(~np.isclose(s, 0.0, atol=tolerance)), :]
