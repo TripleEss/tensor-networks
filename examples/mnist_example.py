@@ -47,3 +47,4 @@ sweeper = sweep(weights, train_inputs, svd=partial(truncated_svd, max_chi=20))
 for _ in range(14):
     consume(sweeper, 56)
     test()
+    print('-------------------------')
