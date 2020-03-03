@@ -13,7 +13,7 @@ class TensorTrain(Sequence[Array]):
         0: left bond index
         1: physical index
         -1: right bond index
-    Additionally, there is always one core with the additional index:
+    There is also always one core with the additional index:
         2: label index
     """
 
