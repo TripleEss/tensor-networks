@@ -4,7 +4,7 @@ from tensor_networks.annotations import *
 import numpy as np
 
 
-class Input(ndarray, Sequence[ndarray]):
+class Input(Array, Sequence[Array]):
     def __new__(cls, arrays, label, **kwargs) -> Input:
         arr = np.array(arrays, **kwargs)
         self = arr.view(cls)

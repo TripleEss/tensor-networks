@@ -6,7 +6,7 @@ from tensor_networks.annotations import *
 
 
 def as_dtype(dtype: np.dtype):
-    def decorator(array_constructor: Callable[..., ndarray]):
+    def decorator(array_constructor: Callable[..., Array]):
         @wraps(array_constructor)
         def changed_dtype(*args, **kwargs):
             kwargs.setdefault('dtype', dtype)

@@ -1,6 +1,6 @@
 from typing import *
 
-from numpy import ndarray
+import numpy as np
 
 
 __all__ = (
@@ -9,21 +9,15 @@ __all__ = (
     'overload', 'Any', 'TypeVar', 'Callable', 'Type', 'TYPE_CHECKING',
     'Generator', 'Reversible', 'MutableSequence',
 
-    # external
-    'ndarray',
-
-    # internal
-    'SVDTuple', 'SVDCallable', 'SVDToInt', 'AbsColor', 'PartialColor',
-    'TTrain', 'Updater',
+    # custom
+    'Array', 'SVDTuple', 'SVDCallable', 'SVDToInt', 'AbsColor', 'PartialColor',
+    'Updater',
 )
 
-SVDTuple = Tuple[ndarray, ndarray, ndarray]
+Array = np.ndarray
+SVDTuple = Tuple[Array, Array, Array]
 SVDCallable = Callable[..., SVDTuple]
-SVDToInt = Callable[[ndarray, ndarray, ndarray], int]
-Updater = Callable[[Iterable[ndarray], Iterable[ndarray]], ndarray]
+SVDToInt = Callable[[Array, Array, Array], int]
+Updater = Callable[[Iterable[Array], Iterable[Array]], Array]
 AbsColor = int
 PartialColor = float
-if TYPE_CHECKING:
-    from tensor_networks.tensor_train import TensorTrain as TTrain
-else:
-    TTrain = None

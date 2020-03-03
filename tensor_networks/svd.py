@@ -12,7 +12,7 @@ standard_svd = partial(np.linalg.svd, full_matrices=False)
 # standard_svd = robust_svd
 
 
-def truncated_svd(matrix: ndarray, *, compute_chi: Optional[SVDToInt] = None,
+def truncated_svd(matrix: Array, *, compute_chi: Optional[SVDToInt] = None,
                   max_chi: Optional[int] = None, normalize: bool = True
                   ) -> SVDTuple:
     u, s, v = standard_svd(matrix)
@@ -34,8 +34,8 @@ def truncated_svd(matrix: ndarray, *, compute_chi: Optional[SVDToInt] = None,
     return new_u, new_s, new_v
 
 
-def split(tensor: ndarray, before_index: int, *,
-          svd: SVDCallable = truncated_svd, **kwargs) -> Tuple[ndarray, ndarray]:
+def split(tensor: Array, before_index: int, *,
+          svd: SVDCallable = truncated_svd, **kwargs) -> Tuple[Array, Array]:
     left_shape = tensor.shape[:before_index]
     right_shape = tensor.shape[before_index:]
     matrix = tensor.reshape(np.prod(left_shape), np.prod(right_shape))

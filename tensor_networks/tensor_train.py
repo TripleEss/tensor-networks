@@ -4,13 +4,13 @@ import math
 
 import numpy as np
 
-from tensor_networks import contraction, training
+from tensor_networks import contraction
 from tensor_networks.annotations import *
 from tensor_networks.svd import truncated_svd
 from tensor_networks.transposition import transpose_bond_indices
 
 
-class TensorTrain(Sequence[ndarray]):
+class TensorTrain(Sequence[Array]):
     """
     This class represents a tensor train decomposition.
     It acts as an array of its cores.
@@ -22,14 +22,11 @@ class TensorTrain(Sequence[ndarray]):
         2: label index
     """
 
-    sweep = training.sweep
-    sweep_until = training.sweep_until
-
-    def __init__(self, cores: MutableSequence[ndarray]):
+    def __init__(self, cores: MutableSequence[Array]):
         self.cores = cores
 
     @classmethod
-    def decompose(cls, tensor: ndarray, d: int,
+    def decompose(cls, tensor: Array, d: int,
                   svd: SVDCallable = truncated_svd,
                   **svd_kwargs) -> TensorTrain:
         """
@@ -66,7 +63,7 @@ class TensorTrain(Sequence[ndarray]):
         train.append(t)
         return cls(train)
 
-    def contractions(self, keep_mock_index=True, **kwargs) -> Iterable[ndarray]:
+    def contractions(self, keep_mock_index=True, **kwargs) -> Iterable[Array]:
         if not keep_mock_index and len(self) > 0 and self[0].shape[0] == 1:
             first = self[0].reshape(self[0].shape[1:])
             cores = TensorTrain([first, *self[1:]])
@@ -74,7 +71,7 @@ class TensorTrain(Sequence[ndarray]):
             cores = self
         return contraction.contractions(*cores, **kwargs)
 
-    def contract(self, fully=False, **kwargs) -> ndarray:
+    def contract(self, fully=False, **kwargs) -> Array:
         """
         :param fully: Whether to contract the outer indices
         :return: The array obtained by contracting every core
@@ -84,7 +81,7 @@ class TensorTrain(Sequence[ndarray]):
             contracted = contracted.trace(axis1=0, axis2=-1)
         return contracted
 
-    def attach(self, attachments: Iterable[ndarray]) -> TensorTrain:
+    def attach(self, attachments: Iterable[Array]) -> TensorTrain:
         """
         :param attachments: Tensors to be contracted with
         :return: Every core contracted with its respective attachment
@@ -99,7 +96,7 @@ class TensorTrain(Sequence[ndarray]):
         return [t.shape for t in self]
 
     @overload
-    def __getitem__(self, item: int) -> ndarray:
+    def __getitem__(self, item: int) -> Array:
         ...
 
     @overload
@@ -115,16 +112,16 @@ class TensorTrain(Sequence[ndarray]):
             return type(self)(value)
         return value
 
-    def __setitem__(self, key: int, value: ndarray):
+    def __setitem__(self, key: int, value: Array):
         self.cores[key] = value
 
-    def __reversed__(self) -> Iterator[ndarray]:
+    def __reversed__(self) -> Iterator[Array]:
         return iter(self[::-1])
 
     def __len__(self) -> int:
         return len(self.cores)
 
-    def __iter__(self) -> Iterator[ndarray]:
+    def __iter__(self) -> Iterator[Array]:
         return iter(self.cores)
 
     def __str__(self) -> str:

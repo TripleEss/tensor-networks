@@ -8,6 +8,7 @@ from tensor_networks.annotations import *
 from tensor_networks.contraction import contract
 from tensor_networks.inputs import Input
 from tensor_networks.svd import truncated_svd, split
+from tensor_networks.tensor_train import TensorTrain
 
 
 _T = TypeVar('_T')
@@ -23,16 +24,16 @@ def tee_zip_async(seq: Sequence[_T], start: int = 0, direction: int = 1
     return islice(zip(iter1, iter2), start, None)
 
 
-def update(ideals: Iterable[ndarray], outputs: Iterable[ndarray],
-           inputs: Iterable[ndarray]) -> ndarray:
+def update(ideals: Iterable[Array], outputs: Iterable[Array],
+           inputs: Iterable[Array]) -> Array:
     # TODO only use a small multiple of result
     result = sum(contract((idl - out), inp, axes=0).transpose(1, 2, 0, 3, 4)
                  for idl, out, inp in zip(ideals, outputs, inputs))
-    assert isinstance(result, ndarray)
+    assert isinstance(result, Array)
     return result
 
 
-def sweep(ttrain: TTrain, inputs: Sequence[Input], label_index: int = 0,
+def sweep(ttrain: TensorTrain, inputs: Sequence[Input], label_index: int = 0,
           direction: int = 1, updater: Updater = None,
           svd: SVDCallable = truncated_svd) -> Generator[None, None, None]:
     """
@@ -71,7 +72,7 @@ def sweep(ttrain: TTrain, inputs: Sequence[Input], label_index: int = 0,
         to_optimize = contract(label_core, other_core)
 
         outputs = []
-        local_inputs: List[ndarray] = []
+        local_inputs: List[Array] = []
         for inp, acc_left, acc_right in zip(inputs, acc_lefts, acc_rights):
             label_input, other_input = inp[label_index], inp[other_index]
             left_reduced = acc_left[-1] if acc_left else np.array([1])
@@ -101,7 +102,7 @@ def sweep(ttrain: TTrain, inputs: Sequence[Input], label_index: int = 0,
             other_acc.pop()
 
 
-def sweep_until(tensor_train: TTrain, inputs: Sequence[Input],
+def sweep_until(tensor_train: TensorTrain, inputs: Sequence[Input],
                 iterations: Optional[int] = None, **kwargs) -> None:
     # TODO: other break conditions
     isweep = sweep(tensor_train, inputs, **kwargs)
