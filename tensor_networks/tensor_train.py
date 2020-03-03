@@ -124,6 +124,16 @@ class TensorTrain(Sequence[Array]):
     def __iter__(self) -> Iterator[Array]:
         return iter(self.cores)
 
+    def __mul__(self, other):
+        return type(self)([other * c for c in self.cores])
+
+    __rmul__ = __mul__
+
+    def __truediv__(self, other):
+        return type(self)([c / other for c in self.cores])
+
+    __rtruediv__ = __truediv__
+
     def __str__(self) -> str:
         return str(self.cores)
 
