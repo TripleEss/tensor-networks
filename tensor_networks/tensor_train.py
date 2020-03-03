@@ -46,10 +46,9 @@ class TensorTrain(Sequence[Array]):
         :param attachments: Tensors to be contracted with
         :return: Every core contracted with its respective attachment
         """
-        train = []
-        for core, attached in zip(self, attachments):
-            train.append(contraction.contract(core, attached, axes=(1, 0)))
-        return type(self)(train)
+        cores = [contraction.contract(core, attached, axes=(1, 0))
+                 for core, attached in zip(self, attachments)]
+        return type(self)(cores)
 
     @property
     def shape(self):
