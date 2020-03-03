@@ -21,11 +21,14 @@ class TensorTrain(Sequence[Array]):
         self.cores = cores
 
     def contractions(self, keep_mock_index=True, **kwargs) -> Iterable[Array]:
-        if not keep_mock_index and len(self) > 0 and self[0].shape[0] == 1:
-            first = self[0].reshape(self[0].shape[1:])
-            cores = TensorTrain([first, *self[1:]])
-        else:
-            cores = self
+        cores: Sequence[Array] = self.cores
+
+        if not keep_mock_index:
+            first = cores[0] if len(cores) > 0 else None
+            if first is not None and first.shape[0] == 1:
+                new_first = first.reshape(first.shape[1:])
+                cores = [new_first, *cores[1:]]
+
         return contraction.contractions(*cores, **kwargs)
 
     def contract(self, fully=False, **kwargs) -> Array:
