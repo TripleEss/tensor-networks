@@ -38,6 +38,7 @@ def test():
         guess = np.argmax(classified_label)
         actual = np.argmax(test_inp.label)
         print(f'{guess=}, {actual=}, {cost_=}')
+        print(f'\tlabel vector: {list(np.round(classified_label, 1))}')
 
 
 # optimize
