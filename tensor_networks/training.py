@@ -14,8 +14,8 @@ from tensor_networks.tensor_train import TensorTrain
 _T = TypeVar('_T')
 
 
-def tee_zip_async(seq: Sequence[_T], start: int = 0, direction: int = 1
-                  ) -> Iterator[Tuple[_T, _T]]:
+def swing_pairwise(seq: Sequence[_T], start: int = 0, direction: int = 1
+                   ) -> Iterator[Tuple[_T, _T]]:
     seq_rev = list(reversed(seq))[1:-1]
     iter1, iter2 = tee(cycle(chain(seq, seq_rev)))
     next(iter2, None)
@@ -61,9 +61,9 @@ def sweep(ttrain: TensorTrain, inputs: Sequence[Input], label_index: int = 0,
                        .contractions(keep_mock_index=False))
                   for inp in inputs]
 
-    for label_index, other_index in tee_zip_async(range(len(ttrain)),
-                                                  start=label_index,
-                                                  direction=direction):
+    for label_index, other_index in swing_pairwise(range(len(ttrain)),
+                                                   start=label_index,
+                                                   direction=direction):
         yield
         direction = 1 if label_index < other_index else -1
         label_core, other_core = ttrain[label_index], ttrain[other_index]
