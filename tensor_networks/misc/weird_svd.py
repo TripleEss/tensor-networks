@@ -21,7 +21,7 @@ def robust_svd(a: Array, tolerance: float = 0.0 * 1e-14) -> Tuple[Array, Array, 
     try:
         u, s, v = np.linalg.svd(a, full_matrices=False)
     except np.linalg.LinAlgError as e1:
-        logging.warning(f'Ran into ({type(e1).__name__}: {e1})... transposing and retrying...')
+        logging.warning(f'Ran into {type(e1).__name__}: {e1}... transposing and retrying...')
         try:
             # How is this supposed to help?
             v, s, u = np.linalg.svd(np.transpose(a), full_matrices=False)
