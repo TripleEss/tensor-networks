@@ -7,9 +7,6 @@ from tensor_networks.annotations import *
 
 
 standard_svd = partial(np.linalg.svd, full_matrices=False)
-# TODO try this
-# from tensor_networks.misc.weird_svd import robust_svd
-# standard_svd = robust_svd
 
 
 def truncated_svd(matrix: Array, *, compute_chi: Optional[SVDToInt] = None,
