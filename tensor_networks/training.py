@@ -205,7 +205,8 @@ def sweep(ttrain: TensorTrain,
         direction = Direction.LEFT_TO_RIGHT \
             if label_index < other_index \
             else Direction.RIGHT_TO_LEFT
-        label_core, other_core = ttrain[label_index], ttrain[other_index]
+        label_core = ttrain[label_index]
+        other_core = ttrain[other_index]
 
         # core with label is contracted with the next core
         to_optimize = contract(label_core, other_core)
@@ -224,7 +225,7 @@ def sweep(ttrain: TensorTrain,
         optimized *= np.linalg.norm(to_optimize) / np.linalg.norm(optimized)
         label_core, other_core = split(optimized, before_index=2, svd=svd)
         # transpose label index
-        other_core = other_core.transpose(0, 2, 1, 3)
+        other_core = other_core.swapaxes(1, 2)
         ttrain[label_index] = label_core
         ttrain[other_index] = other_core
 
