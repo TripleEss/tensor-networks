@@ -7,7 +7,7 @@ from more_itertools import consume
 
 from tensor_networks import utils
 from tensor_networks.annotations import *
-from tensor_networks.contraction import contract
+from tensor_networks.contraction import contract, tensor_product, attach
 from tensor_networks.inputs import Input
 from tensor_networks.svd import truncated_svd, split
 from tensor_networks.tensor_train import TensorTrain
@@ -50,82 +50,47 @@ def update(ideals: Iterable[Array], outputs: Iterable[Array],
     return small_update
 
 
-def local_input(label_input: Array,
-                other_input: Array,
-                label_reduced: Array,
-                other_reduced: Array,
-                ) -> Array:
-    """tensor product of all inputs"""
-    return contract(label_reduced, label_input,
-                    other_input, other_reduced,
-                    axes=0)
-
-
-def sweep_bar_helper(optimized_label_core: Array,
-                     label_input: Array,
-                     label_acc: List[Array]
-                     ) -> Array:
-    # TODO only take an optional label_reduced instead of the whole list
-    return contract(
-        label_input,
-        contract(
-            # if there are no cores before optimized_label_core then
-            # we simply remove the mock index (by contracting with ONE_TENSOR)
-            utils.get_last(label_acc, default=utils.ONE_TENSOR),
-            optimized_label_core
-        )
-    )
-
-
-def sweep_bar(optimized_label_core: Array, label_input: Array,
-              label_acc: List[Array], other_acc: List[Array]) -> None:
-    """
-    modifies label_acc and other_acc
-    """
-    label_reduced = sweep_bar_helper(optimized_label_core,
-                                     label_input,
-                                     label_acc)
-    label_acc.append(label_reduced)
-
-    if other_acc:
-        del other_acc[-1]
-
-
-def local_inputs(label_inputs: Iterable[Array],
-                 other_inputs: Iterable[Array],
-                 label_reduceds: Iterable[Array],
-                 other_reduceds: Iterable[Array]
-                 ) -> Generator[Array, None, None]:
-    for label_input, other_input, label_reduced, other_reduced in \
-            zip(label_inputs, other_inputs, label_reduceds, other_reduceds):
-        yield local_input(label_input=label_input,
-                          other_input=other_input,
-                          label_reduced=label_reduced,
-                          other_reduced=other_reduced)
-
-
-def output(to_optimize: Array, local_in: Array):
+def output(to_optimize: Array, local_in: Array) -> Array:
     return contract(to_optimize, local_in, axes=([0, 1, 3, 4], [0, 1, 2, 3]))
 
 
-def outputs(to_optimize: Array, local_ins: Iterable[Array]):
+def outputs(to_optimize: Array, local_ins: Iterable[Array]) -> Iterator[Array]:
     return map(partial(output, to_optimize), local_ins)
 
 
-def sweep_helper_post(optimized_label_core: Array,
-                      label_inputs: Iterable[Array],
-                      label_accs: Iterable[List[Array]],
-                      other_accs: Iterable[List[Array]]
-                      ) -> None:
+def shift_labels(optimized_label_core: Array,
+                 label_inputs: Iterable[Array],
+                 label_accs: Iterable[List[Array]],
+                 other_accs: Iterable[List[Array]]
+                 ) -> None:
     for li, la, oa in zip(label_inputs, label_accs, other_accs):
-        sweep_bar(optimized_label_core,
-                  label_input=li, label_acc=la, other_acc=oa)
+        shift_label(optimized_label_core,
+                    label_input=li, label_acc=la, other_acc=oa)
+
+
+def shift_label(optimized_label_core: Array, label_input: Array,
+                label_acc: List[Array], other_acc: List[Array]) -> None:
+    """
+    modifies label_acc and other_acc
+    """
+    # if there are no cores before optimized_label_core then
+    # we simply remove the mock index (by contracting with ONE_TENSOR)
+    previous_label_reduced = utils.get_last_or_one_tensor(label_acc)
+    new_label_reduced = contract(
+        previous_label_reduced,
+        attach(optimized_label_core, label_input)
+    )
+    label_acc.append(new_label_reduced)
+
+    # pop the last element off of other_acc
+    if other_acc:
+        del other_acc[-1]
 
 
 def sweep(ttrain: TensorTrain,
           inputs: Sequence[Input],
           label_index: int = 0,
-          starting_direction: Direction = Direction.RIGHT_TO_LEFT,
+          starting_direction: Direction = Direction.LEFT_TO_RIGHT,
           updater: Updater = None,
           svd: SVDCallable = truncated_svd
           ) -> Generator[None, None, None]:
@@ -180,25 +145,23 @@ def sweep(ttrain: TensorTrain,
         # They symbolize that the variable can be used as if
         # it really was on the left/right side
         # (even though it might actually have been on the other side).
-        l_label_core = maybe_transpose_bond_indices(ttrain[label_index])
-        r_other_core = maybe_transpose_bond_indices(ttrain[other_index])
-
         l_label_accs, r_other_accs = ((acc_lefts, acc_rights)
                                       if direction == Direction.LEFT_TO_RIGHT
                                       else (acc_rights, acc_lefts))
         l_label_reduceds = map(utils.get_last_or_one_tensor, l_label_accs)
         r_other_reduceds = map(utils.get_last_or_one_tensor, r_other_accs)
 
-        # core with label is contracted with the next core
-        to_optimize = contract(l_label_core, r_other_core)
-
         label_inputs = [inp[label_index] for inp in inputs]
         other_inputs = [inp[other_index] for inp in inputs]
 
-        local_ins = local_inputs(label_inputs=label_inputs,
-                                 other_inputs=other_inputs,
-                                 label_reduceds=l_label_reduceds,
-                                 other_reduceds=r_other_reduceds)
+        local_ins = map(tensor_product,
+                        l_label_reduceds, label_inputs,
+                        other_inputs, r_other_reduceds)
+
+        l_label_core = maybe_transpose_bond_indices(ttrain[label_index])
+        r_other_core = maybe_transpose_bond_indices(ttrain[other_index])
+        # core with label is contracted with the next core
+        to_optimize = contract(l_label_core, r_other_core)
         outs = outputs(to_optimize=to_optimize, local_ins=local_ins)
 
         optimized = to_optimize + updater(outs, local_ins)
@@ -209,10 +172,10 @@ def sweep(ttrain: TensorTrain,
         ttrain[label_index] = maybe_transpose_bond_indices(l_label_core)
         ttrain[other_index] = maybe_transpose_bond_indices(r_other_core)
 
-        sweep_helper_post(optimized_label_core=l_label_core,
-                          label_inputs=label_inputs,
-                          label_accs=l_label_accs,
-                          other_accs=r_other_accs)
+        shift_labels(optimized_label_core=l_label_core,
+                     label_inputs=label_inputs,
+                     label_accs=l_label_accs,
+                     other_accs=r_other_accs)
 
 
 def sweep_until(tensor_train: TensorTrain, inputs: Sequence[Input],

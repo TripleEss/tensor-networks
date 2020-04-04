@@ -41,12 +41,12 @@ class TensorTrain(Sequence[Array]):
             contracted = contracted.trace(axis1=0, axis2=-1)
         return contracted
 
-    def attach(self, attachments: Iterable[Array]) -> TensorTrain:
+    def attach(self, attachments: Iterable[Array], **kwargs) -> TensorTrain:
         """
         :param attachments: Tensors to be contracted with
         :return: Every core contracted with its respective attachment
         """
-        cores = [contraction.contract(core, attached, axes=(1, 0))
+        cores = [contraction.attach(core, attached, **kwargs)
                  for core, attached in zip(self, attachments)]
         return type(self)(cores)
 
