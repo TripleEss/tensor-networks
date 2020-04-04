@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from copy import deepcopy
+
 from tensor_networks import contraction
 from tensor_networks.annotations import *
 from tensor_networks.transposition import transpose_bond_indices
@@ -84,12 +86,12 @@ class TensorTrain(Sequence[Array]):
         return iter(self.cores)
 
     def __mul__(self, other):
-        return type(self)([other * c for c in self.cores])
+        return type(self)([other * c for c in self])
 
     __rmul__ = __mul__
 
     def __truediv__(self, other):
-        return type(self)([c / other for c in self.cores])
+        return type(self)([c / other for c in self])
 
     __rtruediv__ = __truediv__
 
@@ -98,3 +100,9 @@ class TensorTrain(Sequence[Array]):
 
     def __repr__(self) -> str:
         return f'{type(self).__name__}({self})'
+
+    def __copy__(self) -> TensorTrain:
+        return type(self)(self.cores)
+
+    def __deepcopy__(self, memo=None):
+        return type(self)([deepcopy(c) for c in self])

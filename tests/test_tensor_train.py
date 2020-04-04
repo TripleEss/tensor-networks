@@ -1,3 +1,5 @@
+from copy import copy
+
 import numpy as np
 import pytest
 from pytest import approx
@@ -69,3 +71,18 @@ def test_reversed(tt, reduced):
         assert (x == y).all()
     rev_reassembled = rev.contract(fully=True)
     assert reverse_transpose(rev_reassembled) == approx(reduced)
+
+
+def test_arithmetic(tt):
+    assert np.array(tt.cores) - np.array(((tt / 5) * 5).cores) == approx(0)
+    assert np.array(tt.cores) - np.array(((5 * tt) / 5).cores) == approx(0)
+
+
+def test_setitem(tt):
+    ttc = copy(tt)
+    if len(ttc) > 0:
+        ttc[0], ttc[-1]
+        ttc[0] = np.array([1, 2, 3])
+        ttc[-1] = np.array([1, 2, 3])
+    with pytest.raises(IndexError):
+        ttc[len(ttc)]

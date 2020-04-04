@@ -35,7 +35,7 @@ def split(tensor: Array, before_index: int, *,
           svd: SVDCallable = truncated_svd, **kwargs) -> Tuple[Array, Array]:
     left_shape = tensor.shape[:before_index]
     right_shape = tensor.shape[before_index:]
-    matrix = tensor.reshape(np.prod(left_shape), np.prod(right_shape))
+    matrix = tensor.reshape(int(np.prod(left_shape)), int(np.prod(right_shape)))
     u, s, v = svd(matrix, **kwargs)
     t1 = u
     t2 = np.diag(s) @ v

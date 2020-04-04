@@ -1,17 +1,33 @@
 import numpy as np
-import pytest
 from pytest import approx
 
-from tensor_networks.svd import truncated_svd
+from tensor_networks.contraction import contract
+from tensor_networks.svd import truncated_svd, split
+from tests.helpers import constant_fixture, arange_from_shape
 
 
-@pytest.mark.parametrize('arr', [
-    np.arange(50).reshape(10, 5),
-    np.arange(1).reshape(1, 1),
+matrix = constant_fixture(params=[
+    arange_from_shape(10, 5),
+    arange_from_shape(1, 1),
 ])
-@pytest.mark.parametrize('max_chi', [None, 1, 2, 3, 4, 10, 100])
-def test_truncated_svd(arr, max_chi):
-    u, s, v = truncated_svd(arr, max_chi=max_chi)
-    if max_chi != 1:
-        test_arr = u @ np.diag(s) @ v
-        assert test_arr == approx(arr)
+max_chi = constant_fixture(params=[None, 2, 3, 4, 10, 100])
+
+
+def test_truncated_svd(matrix, max_chi):
+    u, s, v = truncated_svd(matrix, max_chi=max_chi)
+    reassembled = u @ np.diag(s) @ v
+    assert reassembled == approx(matrix)
+
+
+arr = constant_fixture(params=[
+    arange_from_shape(2, 3, 4, 5),
+    arange_from_shape(2, 3),
+    arange_from_shape(5),
+    arange_from_shape(1),
+])
+
+
+def test_split(arr, max_chi):
+    a1, a2 = split(arr, 2, max_chi=max_chi)
+    reassembled = contract(a1, a2)
+    assert reassembled == approx(arr)
