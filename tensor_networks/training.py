@@ -1,11 +1,11 @@
-from enum import Enum
 from functools import partial
-from itertools import tee, chain, islice, cycle, repeat
+from itertools import tee
 
 import numpy as np
 from more_itertools import consume
 
 from tensor_networks import utils
+from tensor_networks.utils import Direction
 from tensor_networks.annotations import *
 from tensor_networks.contraction import contract, tensor_product, attach
 from tensor_networks.inputs import Input
@@ -14,37 +14,11 @@ from tensor_networks.tensor_train import TensorTrain
 from tensor_networks.transposition import transpose_bond_indices
 
 
-class Direction(Enum):
-    LEFT_TO_RIGHT = 1
-    RIGHT_TO_LEFT = -1
-
-
-_T = TypeVar('_T')
-
-
-def swing_pairwise(seq: Sequence[_T],
-                   start: int = 0,
-                   direction: Direction = Direction.LEFT_TO_RIGHT
-                   ) -> Iterator[Tuple[_T, _T, Direction]]:
-    # TODO: documentation
-    seq_rev = list(reversed(seq))[1:-1]
-    iter1, iter2 = tee(cycle(chain(seq, seq_rev)))
-    next(iter2, None)
-
-    directions = cycle(chain(repeat(Direction.LEFT_TO_RIGHT, len(seq) - 1),
-                             repeat(Direction.RIGHT_TO_LEFT, len(seq) - 1)))
-
-    if direction == Direction.RIGHT_TO_LEFT:
-        start = 2 * (len(seq) - 1) - start
-
-    return islice(zip(iter1, iter2, directions), start, None)
-
-
 def update(ideals: Iterable[Array], outputs: Iterable[Array],
            inputs: Iterable[Array]) -> Array:
-    full_update = sum(contract((idl - out), inp, axes=0).transpose(1, 2, 0, 3, 4)
-                      for idl, out, inp in zip(ideals, outputs, inputs))
-    # TODO make factor a variable
+    full_update = sum(contract((ideal - out), inp, axes=0).transpose(1, 2, 0, 3, 4)
+                      for ideal, out, inp in zip(ideals, outputs, inputs))
+    # TODO: make factor a variable
     small_update = - 0.000000001 * full_update
     assert isinstance(small_update, Array)
     return small_update
@@ -54,15 +28,15 @@ def output(to_optimize: Array, local_in: Array) -> Array:
     return contract(to_optimize, local_in, axes=([0, 1, 3, 4], [0, 1, 2, 3]))
 
 
-def outputs(to_optimize: Array, local_ins: Iterable[Array]) -> Iterator[Array]:
-    return map(partial(output, to_optimize), local_ins)
+def outputs(to_optimize: Array, local_inputs: Iterable[Array]
+            ) -> Iterator[Array]:
+    return map(partial(output, to_optimize), local_inputs)
 
 
 def shift_labels(optimized_label_core: Array,
                  label_inputs: Iterable[Array],
                  label_accs: Iterable[List[Array]],
-                 other_accs: Iterable[List[Array]]
-                 ) -> None:
+                 other_accs: Iterable[List[Array]]) -> None:
     for li, la, oa in zip(label_inputs, label_accs, other_accs):
         shift_label(optimized_label_core,
                     label_input=li, label_acc=la, other_acc=oa)
@@ -109,9 +83,11 @@ def sweep(ttrain: TensorTrain,
     if updater is None:
         updater = partial(update, [inp.label for inp in inputs])
 
-    index_generator1, index_generator2 = tee(swing_pairwise(range(len(ttrain)),
-                                                            start=label_index,
-                                                            direction=starting_direction))
+    index_generator1, index_generator2 = tee(
+        utils.swing_pairwise(range(len(ttrain)),
+                             start=label_index,
+                             direction=starting_direction)
+    )
 
     label_index, other_index, direction = next(index_generator1)
     left_index, right_index = ((label_index, other_index)
@@ -154,17 +130,17 @@ def sweep(ttrain: TensorTrain,
         label_inputs = [inp[label_index] for inp in inputs]
         other_inputs = [inp[other_index] for inp in inputs]
 
-        local_ins = map(tensor_product,
-                        l_label_reduceds, label_inputs,
-                        other_inputs, r_other_reduceds)
+        local_inputs = map(tensor_product,
+                           l_label_reduceds, label_inputs,
+                           other_inputs, r_other_reduceds)
 
         l_label_core = maybe_transpose_bond_indices(ttrain[label_index])
         r_other_core = maybe_transpose_bond_indices(ttrain[other_index])
         # core with label is contracted with the next core
         to_optimize = contract(l_label_core, r_other_core)
-        outs = outputs(to_optimize=to_optimize, local_ins=local_ins)
+        outs = outputs(to_optimize=to_optimize, local_inputs=local_inputs)
 
-        optimized = to_optimize + updater(outs, local_ins)
+        optimized = to_optimize + updater(outs, local_inputs)
         optimized *= np.linalg.norm(to_optimize) / np.linalg.norm(optimized)
         l_label_core, r_other_core = split(optimized, before_index=2, svd=svd)
         # transpose label index into its correct position (from 1 to 2)
