@@ -81,8 +81,12 @@ def test_arithmetic(tt):
 def test_setitem(tt):
     ttc = copy(tt)
     if len(ttc) > 0:
-        ttc[0], ttc[-1]
+        a = ttc[0]
+        b = ttc[-1]
         ttc[0] = np.array([1, 2, 3])
         ttc[-1] = np.array([1, 2, 3])
+        ttc[0] = a
+        ttc[-1] = b
+    assert ttc == tt
     with pytest.raises(IndexError):
         ttc[len(ttc)]

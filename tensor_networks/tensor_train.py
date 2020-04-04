@@ -106,3 +106,8 @@ class TensorTrain(Sequence[Array]):
 
     def __deepcopy__(self, memo=None):
         return type(self)([deepcopy(c) for c in self])
+
+    def __eq__(self, other):
+        if not isinstance(other, TensorTrain):
+            raise NotImplementedError
+        return self.cores == other.cores
