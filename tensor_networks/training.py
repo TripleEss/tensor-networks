@@ -110,13 +110,9 @@ def sweep(ttrain: TensorTrain,
 
     for label_index, other_index, direction in index_generator2:
         # yield to allow the caller of this function to stop
-        # the iteration at some point (otherwise this would go on infinitely)
+        # the iterations at some point (otherwise this would go on infinitely)
         yield
-        # swap bond indices when going backward so that further algorithms
-        # only need to handle the case of going left to right
-        maybe_transpose_bond_indices = (utils.identity
-                                        if direction == Direction.LEFT_TO_RIGHT
-                                        else transpose_bond_indices)
+
         # The prefixes 'l' and 'r' stand for 'left' and 'right'.
         # They symbolize that the variable can be used as if
         # it really was on the left/right side
@@ -130,10 +126,17 @@ def sweep(ttrain: TensorTrain,
         label_inputs = [inp[label_index] for inp in inputs]
         other_inputs = [inp[other_index] for inp in inputs]
 
-        local_inputs = map(tensor_product,
+        local_inputs = map(tensor_product,  # type: ignore[arg-type]
                            l_label_reduceds, label_inputs,
                            other_inputs, r_other_reduceds)
 
+        # swap bond indices when going backward so that further algorithms
+        # only need to handle the case of going left to right
+        maybe_transpose_bond_indices: Callable[[Array], Array] = (
+            utils.identity  # type: ignore[assignment]
+            if direction == Direction.LEFT_TO_RIGHT
+            else transpose_bond_indices
+        )
         l_label_core = maybe_transpose_bond_indices(ttrain[label_index])
         r_other_core = maybe_transpose_bond_indices(ttrain[other_index])
         # core with label is contracted with the next core
