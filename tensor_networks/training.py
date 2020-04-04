@@ -1,6 +1,6 @@
 from enum import Enum
 from functools import partial
-from itertools import tee, chain, islice, cycle
+from itertools import tee, chain, islice, cycle, repeat
 
 import numpy as np
 from more_itertools import consume
@@ -11,6 +11,7 @@ from tensor_networks.contraction import contract
 from tensor_networks.inputs import Input
 from tensor_networks.svd import truncated_svd, split
 from tensor_networks.tensor_train import TensorTrain
+from tensor_networks.transposition import transpose_bond_indices
 
 
 class Direction(Enum):
@@ -24,13 +25,19 @@ _T = TypeVar('_T')
 def swing_pairwise(seq: Sequence[_T],
                    start: int = 0,
                    direction: Direction = Direction.LEFT_TO_RIGHT
-                   ) -> Iterator[Tuple[_T, _T]]:
+                   ) -> Iterator[Tuple[_T, _T, Direction]]:
+    # TODO: documentation
     seq_rev = list(reversed(seq))[1:-1]
     iter1, iter2 = tee(cycle(chain(seq, seq_rev)))
     next(iter2, None)
+
+    directions = cycle(chain(repeat(Direction.LEFT_TO_RIGHT, len(seq) - 1),
+                             repeat(Direction.RIGHT_TO_LEFT, len(seq) - 1)))
+
     if direction == Direction.RIGHT_TO_LEFT:
         start = 2 * (len(seq) - 1) - start
-    return islice(zip(iter1, iter2), start, None)
+
+    return islice(zip(iter1, iter2, directions), start, None)
 
 
 def update(ideals: Iterable[Array], outputs: Iterable[Array],
@@ -43,63 +50,39 @@ def update(ideals: Iterable[Array], outputs: Iterable[Array],
     return small_update
 
 
-def sweep_foo(to_optimize: Array,
-              label_input: Array,
-              other_input: Array,
-              label_acc: List[Array],
-              other_acc: List[Array]
-              ) -> Tuple[Array, Array]:
-    """
-    :return: tuple of the local_input and the output
-    """
-    # label_acc, other_acc = (acc_left, acc_right)[::direction]
-    label_reduced = utils.get_last(label_acc, default=utils.ONE_TENSOR)
-    other_reduced = utils.get_last(other_acc, default=utils.ONE_TENSOR)
-
-    # tensor product of all inputs
-    local_input = contract(label_reduced, label_input,
-                           other_input, other_reduced,
-                           axes=0)
-
-    output = contract(to_optimize, local_input,
-                      axes=([0, 1, 3, 4], [0, 1, 2, 3]))
-
-    return local_input, output
+def local_input(label_input: Array,
+                other_input: Array,
+                label_reduced: Array,
+                other_reduced: Array,
+                ) -> Array:
+    """tensor product of all inputs"""
+    return contract(label_reduced, label_input,
+                    other_input, other_reduced,
+                    axes=0)
 
 
 def sweep_bar_helper(optimized_label_core: Array,
-                     direction: Direction,
                      label_input: Array,
                      label_acc: List[Array]
                      ) -> Array:
-    if label_acc:
-        if direction == Direction.LEFT_TO_RIGHT:
-            label_reduced_core = contract(label_acc[-1], optimized_label_core)
-        else:
-            label_reduced_core = contract(optimized_label_core, label_acc[-1])
-    else:
-        # there are no cores before optimized_label_core
-        # so we just remove the mock index
-        mock_index = 0 if direction == Direction.LEFT_TO_RIGHT else -1
-        label_reduced_core = optimized_label_core.squeeze(axis=mock_index)
-
-    if direction == Direction.LEFT_TO_RIGHT:
-        return contract(label_input, label_reduced_core)
-    else:
-        return contract(label_reduced_core, label_input)
+    # TODO only take an optional label_reduced instead of the whole list
+    return contract(
+        label_input,
+        contract(
+            # if there are no cores before optimized_label_core then
+            # we simply remove the mock index (by contracting with ONE_TENSOR)
+            utils.get_last(label_acc, default=utils.ONE_TENSOR),
+            optimized_label_core
+        )
+    )
 
 
-def sweep_bar(optimized_label_core: Array,
-              direction: Direction,
-              label_input: Array,
-              label_acc: List[Array],
-              other_acc: List[Array]
-              ) -> None:
+def sweep_bar(optimized_label_core: Array, label_input: Array,
+              label_acc: List[Array], other_acc: List[Array]) -> None:
     """
     modifies label_acc and other_acc
     """
     label_reduced = sweep_bar_helper(optimized_label_core,
-                                     direction,
                                      label_input,
                                      label_acc)
     label_acc.append(label_reduced)
@@ -108,68 +91,41 @@ def sweep_bar(optimized_label_core: Array,
         del other_acc[-1]
 
 
-def sweep_helper_pre(to_optimize: Array,
-                     direction: Direction,
-                     label_inputs: Iterable[Array],
-                     other_inputs: Iterable[Array],
-                     acc_lefts: Iterable[List[Array]],
-                     acc_rights: Iterable[List[Array]]
-                     ) -> Tuple[Iterable[Array], Iterable[Array]]:
-    local_inputs: List[Array] = []
-    outputs: List[Array] = []
+def local_inputs(label_inputs: Iterable[Array],
+                 other_inputs: Iterable[Array],
+                 label_reduceds: Iterable[Array],
+                 other_reduceds: Iterable[Array]
+                 ) -> Generator[Array, None, None]:
+    for label_input, other_input, label_reduced, other_reduced in \
+            zip(label_inputs, other_inputs, label_reduceds, other_reduceds):
+        yield local_input(label_input=label_input,
+                          other_input=other_input,
+                          label_reduced=label_reduced,
+                          other_reduced=other_reduced)
 
-    for label_input, other_input, acc_left, acc_right in \
-            zip(label_inputs, other_inputs, acc_lefts, acc_rights):
-        if direction == Direction.LEFT_TO_RIGHT:
-            label_acc = acc_left
-            other_acc = acc_right
-        else:
-            label_acc = acc_right
-            other_acc = acc_left
 
-        local_input, output = sweep_foo(to_optimize=to_optimize,
-                                        label_input=label_input,
-                                        other_input=other_input,
-                                        label_acc=label_acc,
-                                        other_acc=other_acc)
+def output(to_optimize: Array, local_in: Array):
+    return contract(to_optimize, local_in, axes=([0, 1, 3, 4], [0, 1, 2, 3]))
 
-        local_inputs.append(local_input)
-        outputs.append(output)
 
-    return local_inputs, outputs
+def outputs(to_optimize: Array, local_ins: Iterable[Array]):
+    return map(partial(output, to_optimize), local_ins)
 
 
 def sweep_helper_post(optimized_label_core: Array,
-                      direction: Direction,
                       label_inputs: Iterable[Array],
-                      acc_lefts: Iterable[List[Array]],
-                      acc_rights: Iterable[List[Array]]):
-    for label_input, acc_left, acc_right in zip(label_inputs, acc_lefts, acc_rights):
-        if direction == Direction.LEFT_TO_RIGHT:
-            label_acc = acc_left
-            other_acc = acc_right
-        else:
-            label_acc = acc_right
-            other_acc = acc_left
-
-        sweep_bar(optimized_label_core=optimized_label_core,
-                  direction=direction,
-                  label_input=label_input,
-                  label_acc=label_acc,
-                  other_acc=other_acc)
-
-        # if label_acc:
-        #     reduced_next = contract(*(label_acc[-1], label_core)[::direction])
-        # else:
-        #     reduced_next = label_core.reshape(label_core.shape[1:])
-        # label_acc.append(contract(*(label_input, reduced_next)[::direction]))
-        # other_acc.pop()
+                      label_accs: Iterable[List[Array]],
+                      other_accs: Iterable[List[Array]]
+                      ) -> None:
+    for li, la, oa in zip(label_inputs, label_accs, other_accs):
+        sweep_bar(optimized_label_core,
+                  label_input=li, label_acc=la, other_acc=oa)
 
 
 def sweep(ttrain: TensorTrain,
           inputs: Sequence[Input],
           label_index: int = 0,
-          direction: Direction = Direction.LEFT_TO_RIGHT,
+          starting_direction: Direction = Direction.RIGHT_TO_LEFT,
           updater: Updater = None,
           svd: SVDCallable = truncated_svd
           ) -> Generator[None, None, None]:
@@ -179,7 +135,7 @@ def sweep(ttrain: TensorTrain,
     :param ttrain: The train to optimize
     :param inputs: TODO
     :param label_index: The index at which we start optimizing
-    :param direction: The direction in which we start sweeping
+    :param starting_direction: The direction in which we start sweeping
     :param updater: The function used for calculating updates
     :param svd: The function used for singular value decomposition
     """
@@ -188,56 +144,79 @@ def sweep(ttrain: TensorTrain,
     if updater is None:
         updater = partial(update, [inp.label for inp in inputs])
 
-    left_i, right_i = sorted((label_index, label_index + direction.value))
-    acc_lefts = [list(ttrain[:left_i]
-                      .attach(inp[:left_i])
+    index_generator1, index_generator2 = tee(swing_pairwise(range(len(ttrain)),
+                                                            start=label_index,
+                                                            direction=starting_direction))
+
+    label_index, other_index, direction = next(index_generator1)
+    left_index, right_index = ((label_index, other_index)
+                               if direction == Direction.LEFT_TO_RIGHT
+                               else (other_index, label_index))
+
+    # Initialize accumulated inputs from the left and the right.
+    # Using accumulation instead of reduction
+    # (which would only be the last element of the accumulation)
+    # has the advantage of avoiding redundant computation since only the ends
+    # of the accumulation ever change and the rest of it can be reused.
+    acc_lefts = [list(ttrain[:left_index]
+                      .attach(inp[:left_index])
                       .contractions(keep_mock_index=False))
                  for inp in inputs]
-    acc_rights = [list(ttrain[:right_i:-1]
-                       .attach(inp[:right_i:-1])
+    acc_rights = [list(ttrain[:right_index:-1]
+                       .attach(inp[:right_index:-1])
                        .contractions(keep_mock_index=False))
                   for inp in inputs]
 
-    for label_index, other_index in swing_pairwise(range(len(ttrain)),
-                                                   start=label_index,
-                                                   direction=direction):
+    for label_index, other_index, direction in index_generator2:
+        # yield to allow the caller of this function to stop
+        # the iteration at some point (otherwise this would go on infinitely)
         yield
-        direction = Direction.LEFT_TO_RIGHT \
-            if label_index < other_index \
-            else Direction.RIGHT_TO_LEFT
-        label_core = ttrain[label_index]
-        other_core = ttrain[other_index]
+        # swap bond indices when going backward so that further algorithms
+        # only need to handle the case of going left to right
+        maybe_transpose_bond_indices = (utils.identity
+                                        if direction == Direction.LEFT_TO_RIGHT
+                                        else transpose_bond_indices)
+        # The prefixes 'l' and 'r' stand for 'left' and 'right'.
+        # They symbolize that the variable can be used as if
+        # it really was on the left/right side
+        # (even though it might actually have been on the other side).
+        l_label_core = maybe_transpose_bond_indices(ttrain[label_index])
+        r_other_core = maybe_transpose_bond_indices(ttrain[other_index])
+
+        l_label_accs, r_other_accs = ((acc_lefts, acc_rights)
+                                      if direction == Direction.LEFT_TO_RIGHT
+                                      else (acc_rights, acc_lefts))
+        l_label_reduceds = map(utils.get_last_or_one_tensor, l_label_accs)
+        r_other_reduceds = map(utils.get_last_or_one_tensor, r_other_accs)
 
         # core with label is contracted with the next core
-        to_optimize = contract(label_core, other_core)
+        to_optimize = contract(l_label_core, r_other_core)
 
         label_inputs = [inp[label_index] for inp in inputs]
         other_inputs = [inp[other_index] for inp in inputs]
 
-        local_inputs, outputs = sweep_helper_pre(to_optimize=to_optimize,
-                                                 direction=direction,
-                                                 label_inputs=label_inputs,
-                                                 other_inputs=other_inputs,
-                                                 acc_lefts=acc_lefts,
-                                                 acc_rights=acc_rights)
+        local_ins = local_inputs(label_inputs=label_inputs,
+                                 other_inputs=other_inputs,
+                                 label_reduceds=l_label_reduceds,
+                                 other_reduceds=r_other_reduceds)
+        outs = outputs(to_optimize=to_optimize, local_ins=local_ins)
 
-        optimized = to_optimize + updater(outputs, local_inputs)
+        optimized = to_optimize + updater(outs, local_ins)
         optimized *= np.linalg.norm(to_optimize) / np.linalg.norm(optimized)
-        label_core, other_core = split(optimized, before_index=2, svd=svd)
-        # transpose label index
-        other_core = other_core.swapaxes(1, 2)
-        ttrain[label_index] = label_core
-        ttrain[other_index] = other_core
+        l_label_core, r_other_core = split(optimized, before_index=2, svd=svd)
+        # transpose label index into its correct position (from 1 to 2)
+        r_other_core = r_other_core.swapaxes(1, 2)
+        ttrain[label_index] = maybe_transpose_bond_indices(l_label_core)
+        ttrain[other_index] = maybe_transpose_bond_indices(r_other_core)
 
-        sweep_helper_post(optimized_label_core=label_core,
-                          direction=direction,
+        sweep_helper_post(optimized_label_core=l_label_core,
                           label_inputs=label_inputs,
-                          acc_lefts=acc_lefts,
-                          acc_rights=acc_rights)
+                          label_accs=l_label_accs,
+                          other_accs=r_other_accs)
 
 
 def sweep_until(tensor_train: TensorTrain, inputs: Sequence[Input],
                 iterations: Optional[int] = None, **kwargs) -> None:
-    # TODO: other break conditions
+    # TODO: more break conditions
     isweep = sweep(tensor_train, inputs, **kwargs)
     consume(isweep, iterations)
