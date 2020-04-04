@@ -78,7 +78,7 @@ def test_arithmetic(tt):
     assert np.array(tt.cores) - np.array(((5 * tt) / 5).cores) == approx(0)
 
 
-def test_setitem(tt):
+def test_setitem_and_copy(tt):
     ttc = copy(tt)
     if len(ttc) > 0:
         a = ttc[0]

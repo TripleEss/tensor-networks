@@ -33,15 +33,6 @@ def outputs(to_optimize: Array, local_inputs: Iterable[Array]
     return map(partial(output, to_optimize), local_inputs)
 
 
-def shift_labels(optimized_label_core: Array,
-                 label_inputs: Iterable[Array],
-                 label_accs: Iterable[List[Array]],
-                 other_accs: Iterable[List[Array]]) -> None:
-    for li, la, oa in zip(label_inputs, label_accs, other_accs):
-        shift_label(optimized_label_core,
-                    label_input=li, label_acc=la, other_acc=oa)
-
-
 def shift_label(optimized_label_core: Array, label_input: Array,
                 label_acc: List[Array], other_acc: List[Array]) -> None:
     """
@@ -59,6 +50,15 @@ def shift_label(optimized_label_core: Array, label_input: Array,
     # pop the last element off of other_acc
     if other_acc:
         del other_acc[-1]
+
+
+def shift_labels(optimized_label_core: Array,
+                 label_inputs: Iterable[Array],
+                 label_accs: Iterable[List[Array]],
+                 other_accs: Iterable[List[Array]]) -> None:
+    for li, la, oa in zip(label_inputs, label_accs, other_accs):
+        shift_label(optimized_label_core,
+                    label_input=li, label_acc=la, other_acc=oa)
 
 
 def sweep(ttrain: TensorTrain,
