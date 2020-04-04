@@ -15,7 +15,7 @@ data_ids = [str(x) for x in range(len(data_arrays))]
 
 arr = constant_fixture(params=data_arrays, ids=data_ids)
 d = constant_fixture(params=data_ds, ids=data_ids)
-max_chi = constant_fixture(params=[2])
+max_chi = constant_fixture(params=[2, 4, 8, None])
 
 
 @pytest.fixture(ids=data_ids)
@@ -31,10 +31,11 @@ def test_shape(tt, d, max_chi):
         # physical indices
         assert s[1] == d
     # bond indices
-    for s in tt.shape[1:]:
-        assert s[0] == max_chi
-    for s in tt.shape[:-1]:
-        assert s[-1] == max_chi
+    if max_chi is not None:
+        for s in tt.shape[1:]:
+            assert s[0] <= max_chi
+        for s in tt.shape[:-1]:
+            assert s[-1] <= max_chi
     # mock bond indices
     assert tt.shape[0][0] == 1
     assert tt.shape[-1][-1] == 1
