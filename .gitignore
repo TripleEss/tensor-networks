@@ -2,7 +2,6 @@
 doc/
 
 # test data
-mnist/
 images/
 
 # VSCode
