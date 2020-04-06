@@ -30,16 +30,25 @@ def output(to_optimize: Array, local_in: Array) -> Array:
 
 def outputs(to_optimize: Array, local_inputs: Iterable[Array]
             ) -> Iterator[Array]:
-    return map(partial(output, to_optimize), local_inputs)
+    return [output(to_optimize, local_input) for local_input in local_inputs]
 
 
-def shift_label(optimized_label_core: Array, label_input: Array,
-                label_acc: List[Array], other_acc: List[Array]) -> None:
+def shift_accumulations(optimized_label_core: Array, label_input: Array,
+                        label_acc: List[Array], other_acc: List[Array]
+                        ) -> None:
     """
     modifies label_acc and other_acc
     """
+    # If we've reached the end of the tensor train then we
+    # 1. can't pop the last element off of other_acc since it is empty and
+    # 2. therefore also don't want to append to label_acc since otherwise
+    #    the amount of elements in label_acc and other_acc combined would
+    #    increase.
+    if not other_acc:
+        return
+
     # if there are no cores before optimized_label_core then
-    # we simply remove the mock index (by contracting with ONE_TENSOR)
+    # we simply remove its mock index (by contracting with ONE_TENSOR)
     previous_label_reduced = utils.get_last_or_one_tensor(label_acc)
     new_label_reduced = contract(
         previous_label_reduced,
@@ -48,17 +57,16 @@ def shift_label(optimized_label_core: Array, label_input: Array,
     label_acc.append(new_label_reduced)
 
     # pop the last element off of other_acc
-    if other_acc:
-        del other_acc[-1]
+    del other_acc[-1]
 
 
-def shift_labels(optimized_label_core: Array,
-                 label_inputs: Iterable[Array],
-                 label_accs: Iterable[List[Array]],
-                 other_accs: Iterable[List[Array]]) -> None:
+def shift_all_accumulations(optimized_label_core: Array,
+                            label_inputs: Iterable[Array],
+                            label_accs: Iterable[List[Array]],
+                            other_accs: Iterable[List[Array]]) -> None:
     for li, la, oa in zip(label_inputs, label_accs, other_accs):
-        shift_label(optimized_label_core,
-                    label_input=li, label_acc=la, other_acc=oa)
+        shift_accumulations(optimized_label_core,
+                            label_input=li, label_acc=la, other_acc=oa)
 
 
 def sweep(ttrain: TensorTrain,
@@ -120,15 +128,18 @@ def sweep(ttrain: TensorTrain,
         l_label_accs, r_other_accs = ((acc_lefts, acc_rights)
                                       if direction == Direction.LEFT_TO_RIGHT
                                       else (acc_rights, acc_lefts))
-        l_label_reduceds = map(utils.get_last_or_one_tensor, l_label_accs)
-        r_other_reduceds = map(utils.get_last_or_one_tensor, r_other_accs)
+        l_label_reduceds = [utils.get_last_or_one_tensor(acc)
+                            for acc in l_label_accs]
+        r_other_reduceds = [utils.get_last_or_one_tensor(acc)
+                            for acc in r_other_accs]
 
         label_inputs = [inp[label_index] for inp in inputs]
         other_inputs = [inp[other_index] for inp in inputs]
 
-        local_inputs = map(tensor_product,  # type: ignore[arg-type]
-                           l_label_reduceds, label_inputs,
-                           other_inputs, r_other_reduceds)
+        local_inputs = [tensor_product(l_label_r, label_i, other_i, r_other_r)
+                        for l_label_r, label_i, other_i, r_other_r
+                        in zip(l_label_reduceds, label_inputs,
+                               other_inputs, r_other_reduceds)]
 
         # swap bond indices when going backward so that further algorithms
         # only need to handle the case of going left to right
@@ -151,10 +162,10 @@ def sweep(ttrain: TensorTrain,
         ttrain[label_index] = maybe_transpose_bond_indices(l_label_core)
         ttrain[other_index] = maybe_transpose_bond_indices(r_other_core)
 
-        shift_labels(optimized_label_core=l_label_core,
-                     label_inputs=label_inputs,
-                     label_accs=l_label_accs,
-                     other_accs=r_other_accs)
+        shift_all_accumulations(optimized_label_core=l_label_core,
+                                label_inputs=label_inputs,
+                                label_accs=l_label_accs,
+                                other_accs=r_other_accs)
 
 
 def sweep_until(tensor_train: TensorTrain, inputs: Sequence[Input],
