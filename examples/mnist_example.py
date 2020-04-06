@@ -17,7 +17,7 @@ patch_dtype(np.float32)
 
 # load data set
 data = loadmat('./mnist/MNIST.mat', squeeze_me=True)
-train_amount = test_amount = 10
+train_amount = test_amount = 50
 trainX, trainY = data['trainX'][:train_amount], data['trainY'][:train_amount]
 testX, testY = data['testX'][:test_amount], data['testY'][:test_amount]
 train_inputs = list(map(img_feature, trainX, trainY))
@@ -31,21 +31,22 @@ weights = TensorTrain([
 ]) / 1.0286
 
 
-def test():
+def print_guesses():
     for test_inp in test_inputs:
         classified_label = classify(weights, test_inp)
         cost_ = cost(classified_label, test_inp.label)
         guess = np.argmax(classified_label)
         actual = np.argmax(test_inp.label)
-        print(f'{guess=}, {actual=}, {cost_=}')
-        print(f'\tlabel vector: {list(np.round(classified_label, 1))}')
+        print(f'{guess=}, {actual=}, cost={round(cost_, 2)}\n'
+              f'\tlabel vector: {list(np.round(classified_label, 1))}')
 
 
 # optimize
-test()
-print('-------------------------')
+print_guesses()
 sweeper = sweep(weights, train_inputs, svd=partial(truncated_svd, max_chi=20))
-for _ in range(14):
-    consume(sweeper, 56)
-    test()
-    print('-------------------------')
+logging_interval = len(weights) * 4
+for i in range(0, logging_interval * 3 + 1):
+    if i % logging_interval == 0:
+        print_guesses()
+        print(f'### Iterations {i} - {i + logging_interval} ###')
+    consume(sweeper, 1)
