@@ -7,8 +7,8 @@ images/
 # VSCode
 .vscode/
 
-# Pipenv
-Pipfile.lock
+# Poetry
+poetry.lock
 
 # PyCharm
 .idea/
