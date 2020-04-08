@@ -55,15 +55,6 @@ def shift_accumulations(optimized_label_core: Array, label_input: Array,
     del other_acc[-1]
 
 
-def shift_all_accumulations(optimized_label_core: Array,
-                            label_inputs: Iterable[Array],
-                            label_accs: Iterable[List[Array]],
-                            other_accs: Iterable[List[Array]]) -> None:
-    for li, la, oa in zip(label_inputs, label_accs, other_accs):
-        shift_accumulations(optimized_label_core,
-                            label_input=li, label_acc=la, other_acc=oa)
-
-
 def sweep(ttrain: TensorTrain,
           inputs: Sequence[Input],
           label_index: int = 0,
@@ -158,10 +149,9 @@ def sweep(ttrain: TensorTrain,
         ttrain[label_index] = maybe_transpose_bond_indices(l_label_core)
         ttrain[other_index] = maybe_transpose_bond_indices(r_other_core)
 
-        shift_all_accumulations(optimized_label_core=l_label_core,
-                                label_inputs=label_inputs,
-                                label_accs=l_label_accs,
-                                other_accs=r_other_accs)
+        for li, la, oa in zip(label_inputs, l_label_accs, r_other_accs):
+            shift_accumulations(l_label_core, label_input=li,
+                                label_acc=la, other_acc=oa)
 
 
 def sweep_until(tensor_train: TensorTrain, inputs: Sequence[Input],
