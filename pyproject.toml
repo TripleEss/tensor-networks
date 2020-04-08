@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "tensor-networks"
+name = "tensor_networks"
 version = "0.0.1"
 description = ""
 license = "GPL-3.0-only"
@@ -13,15 +13,11 @@ pillow-simd = "*"
 scipy = "*"
 numpy-stubs = { git = "https://github.com/numpy/numpy-stubs.git" }
 more-itertools = "*"
-cupy-cuda102 = { version = "*", optional = true }
 
 [tool.poetry.dev-dependencies]
 pytest = "*"
 mypy = "*"
 flake8 = "*"
-
-[tool.poetry.extras]
-cupy = ["cupy-cuda102"]
 
 [build-system]
 requires = ["poetry>=1.0.5"]
