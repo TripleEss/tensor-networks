@@ -1,8 +1,8 @@
 from tensor_networks.annotations import *
 
-import numpy as np
+from tensor_networks.patched_numpy import np
 
-from tensor_networks.inputs import Input
+from tensor_networks.feature import Input
 from tensor_networks.tensor_train import TensorTrain
 
 
@@ -11,4 +11,4 @@ def cost(labels1: Array, labels2: Array) -> float:
 
 
 def classify(ttrain: TensorTrain, input: Input):
-    return ttrain.attach(input).contract(fully=True)
+    return ttrain.attach(input.array).contract(fully=True)

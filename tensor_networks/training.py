@@ -1,14 +1,14 @@
 from functools import partial
 from itertools import tee
 
-import numpy as np
 from more_itertools import consume
 
+from tensor_networks.patched_numpy import np
 from tensor_networks import utils
 from tensor_networks.utils import Direction
 from tensor_networks.annotations import *
 from tensor_networks.contraction import contract, tensor_product, attach
-from tensor_networks.inputs import Input
+from tensor_networks.feature import Input
 from tensor_networks.svd import truncated_svd, split
 from tensor_networks.tensor_train import TensorTrain
 from tensor_networks.transposition import transpose_bond_indices
@@ -26,11 +26,6 @@ def update(ideals: Iterable[Array], outputs: Iterable[Array],
 
 def output(to_optimize: Array, local_in: Array) -> Array:
     return contract(to_optimize, local_in, axes=([0, 1, 3, 4], [0, 1, 2, 3]))
-
-
-def outputs(to_optimize: Array, local_inputs: Iterable[Array]
-            ) -> Iterator[Array]:
-    return [output(to_optimize, local_input) for local_input in local_inputs]
 
 
 def shift_accumulations(optimized_label_core: Array, label_input: Array,
@@ -75,7 +70,7 @@ def sweep(ttrain: TensorTrain,
           starting_direction: Direction = Direction.LEFT_TO_RIGHT,
           updater: Updater = None,
           svd: SVDCallable = truncated_svd
-          ) -> Generator[None, None, None]:
+          ) -> Iterator[None]:
     """
     Sweep back and forth through the train and optimize the cores
 
@@ -86,7 +81,7 @@ def sweep(ttrain: TensorTrain,
     :param updater: The function used for calculating updates
     :param svd: The function used for singular value decomposition
     """
-    assert len(inputs[0]) == len(ttrain)
+    assert len(inputs[0].array) == len(ttrain)
 
     if updater is None:
         updater = partial(update, [inp.label for inp in inputs])
@@ -108,11 +103,11 @@ def sweep(ttrain: TensorTrain,
     # has the advantage of avoiding redundant computation since only the ends
     # of the accumulation ever change and the rest of it can be reused.
     acc_lefts = [list(ttrain[:left_index]
-                      .attach(inp[:left_index])
+                      .attach(inp.array[:left_index])
                       .contractions(keep_mock_index=False))
                  for inp in inputs]
     acc_rights = [list(ttrain[:right_index:-1]
-                       .attach(inp[:right_index:-1])
+                       .attach(inp.array[:right_index:-1])
                        .contractions(keep_mock_index=False))
                   for inp in inputs]
 
@@ -133,8 +128,8 @@ def sweep(ttrain: TensorTrain,
         r_other_reduceds = [utils.get_last_or_one_tensor(acc)
                             for acc in r_other_accs]
 
-        label_inputs = [inp[label_index] for inp in inputs]
-        other_inputs = [inp[other_index] for inp in inputs]
+        label_inputs = [inp.array[label_index] for inp in inputs]
+        other_inputs = [inp.array[other_index] for inp in inputs]
 
         local_inputs = [tensor_product(l_label_r, label_i, other_i, r_other_r)
                         for l_label_r, label_i, other_i, r_other_r
@@ -152,9 +147,10 @@ def sweep(ttrain: TensorTrain,
         r_other_core = maybe_transpose_bond_indices(ttrain[other_index])
         # core with label is contracted with the next core
         to_optimize = contract(l_label_core, r_other_core)
-        outs = outputs(to_optimize=to_optimize, local_inputs=local_inputs)
+        outputs = [output(to_optimize, local_inp)
+                   for local_inp in local_inputs]
 
-        optimized = to_optimize + updater(outs, local_inputs)
+        optimized = to_optimize + updater(outputs, local_inputs)
         optimized *= np.linalg.norm(to_optimize) / np.linalg.norm(optimized)
         l_label_core, r_other_core = split(optimized, before_index=2, svd=svd)
         # transpose label index into its correct position (from 1 to 2)

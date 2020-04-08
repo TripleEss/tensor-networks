@@ -1,7 +1,7 @@
 # flake8: noqa
 import logging
 
-import numpy as np
+from tensor_networks.patched_numpy import np
 from scipy.sparse.linalg import svds as scipy_sparse_svd
 
 from tensor_networks.annotations import *

@@ -1,4 +1,4 @@
-import numpy as np
+from tensor_networks.patched_numpy import np
 from pytest import approx
 
 from tensor_networks.contraction import contract

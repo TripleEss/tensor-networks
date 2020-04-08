@@ -1,7 +1,7 @@
 import logging
 from functools import partial
 
-import numpy as np
+from tensor_networks.patched_numpy import np
 
 from tensor_networks.annotations import *
 

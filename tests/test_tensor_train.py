@@ -1,6 +1,6 @@
 from copy import copy
 
-import numpy as np
+from tensor_networks.patched_numpy import np
 import pytest
 from pytest import approx
 

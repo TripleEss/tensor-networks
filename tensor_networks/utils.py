@@ -1,7 +1,7 @@
 from enum import Enum
 from itertools import tee, cycle, chain, repeat, islice
 
-import numpy as np
+from tensor_networks.patched_numpy import np
 
 from tensor_networks.annotations import *
 

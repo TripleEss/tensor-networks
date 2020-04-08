@@ -1,7 +1,7 @@
 from tensor_networks.transposition import transpose_bond_indices, reverse_transpose
 from tests.helpers import constant_fixture, arange_from_shape
 
-import numpy as np
+from tensor_networks.patched_numpy import np
 
 
 arr = constant_fixture(params=[

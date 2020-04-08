@@ -1,9 +1,8 @@
 from math import pi, sin, cos
 
-import numpy as np
+from tensor_networks.patched_numpy import np
 
 from tensor_networks.annotations import *
-from tensor_networks.inputs import Input
 
 
 def color_abs_to_percentage(value: AbsColor) -> PartialColor:
@@ -17,10 +16,17 @@ def feature(percentage: PartialColor) -> Array:
     return np.array([cos(pi / 2 * percentage), sin(pi / 2 * percentage)])
 
 
-def label_to_vec(label: int):
+def label_to_vec(label: int) -> Array:
     return np.array(label * [0] + [1] + (9 - label) * [0])
 
 
-def img_feature(values: Array, label) -> Input:
-    return Input(list(map(feature, map(color_abs_to_percentage, values))),
-                 label=label_to_vec(label))
+class Input(NamedTuple):
+    array: Array
+    label: Array
+
+
+def img_feature(values: Array, label: int) -> Input:
+    return Input(
+        np.array(list(map(feature, map(color_abs_to_percentage, values)))),
+        label_to_vec(label),
+    )

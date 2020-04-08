@@ -1,13 +1,13 @@
 from typing import *
 
-import numpy as np
+from tensor_networks.patched_numpy import np
 
 
 __all__ = (
     # typing
     'List', 'Tuple', 'Iterable', 'Optional', 'Union', 'Iterator', 'Sequence',
     'overload', 'Any', 'TypeVar', 'Callable', 'Type', 'TYPE_CHECKING',
-    'Generator', 'Reversible', 'MutableSequence',
+    'Generator', 'Reversible', 'MutableSequence', 'NamedTuple',
 
     # custom
     'Array', 'SVDTuple', 'SVDCallable', 'SVDToInt', 'AbsColor', 'PartialColor',

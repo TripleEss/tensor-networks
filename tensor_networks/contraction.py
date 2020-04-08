@@ -1,10 +1,9 @@
 from functools import partial
 from itertools import accumulate
 
-import numpy as np
+from tensor_networks.patched_numpy import np
 from more_itertools import last
 
-from tensor_networks import utils
 from tensor_networks.annotations import *
 
 

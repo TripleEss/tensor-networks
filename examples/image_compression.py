@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import argparse
 
-import numpy as np
+from tensor_networks.patched_numpy import np
 from PIL import Image
 
 from tensor_networks.annotations import *
