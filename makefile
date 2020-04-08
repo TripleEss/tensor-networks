@@ -6,4 +6,4 @@ test:
 
 lint:
 	-flake8
-	mypy --namespace-packages --show-error-codes tensor_networks/
+	mypy
