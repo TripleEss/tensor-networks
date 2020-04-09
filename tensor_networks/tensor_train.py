@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from copy import deepcopy
 
 from tensor_networks import contraction
@@ -96,10 +97,14 @@ class TensorTrain(Sequence[Array]):
     __rtruediv__ = __truediv__
 
     def __str__(self) -> str:
-        return str(self.cores)
+        return '[' + ', '.join(re.sub(r'\s+', ' ', str(c)) for c in self) + ']'
 
     def __repr__(self) -> str:
-        return f'{type(self).__name__}({self})'
+        type_name = type(self).__name__
+        cores_string = f',\n{" " * (len(type_name) + 1)}' \
+                       .join(re.sub(r'\s+', ' ', repr(c))
+                             for c in self)
+        return f'{type_name}({cores_string})'
 
     def __copy__(self) -> TensorTrain:
         return type(self)(self.cores)
