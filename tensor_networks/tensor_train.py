@@ -110,7 +110,7 @@ class TensorTrain(Sequence[Array]):
         return type(self)(self.cores)
 
     def __deepcopy__(self, memo=None):
-        return type(self)([deepcopy(c) for c in self])
+        return type(self)([deepcopy(c, memo=memo) for c in self])
 
     def __eq__(self, other):
         if not isinstance(other, TensorTrain):
