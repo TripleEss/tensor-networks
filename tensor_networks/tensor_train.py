@@ -102,8 +102,7 @@ class TensorTrain(Sequence[Array]):
     def __repr__(self) -> str:
         type_name = type(self).__name__
         cores_string = f',\n{" " * (len(type_name) + 1)}' \
-                       .join(re.sub(r'\s+', ' ', repr(c))
-                             for c in self)
+                       .join(re.sub(r'\s+', ' ', repr(c)) for c in self)
         return f'{type_name}({cores_string})'
 
     def __copy__(self) -> TensorTrain:
@@ -112,7 +111,7 @@ class TensorTrain(Sequence[Array]):
     def __deepcopy__(self, memo=None):
         return type(self)([deepcopy(c, memo=memo) for c in self])
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if not isinstance(other, TensorTrain):
             raise NotImplementedError
         return self.cores == other.cores
