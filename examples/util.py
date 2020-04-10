@@ -15,7 +15,7 @@ def load_mat_data_set(path, feature, train_amount=None, test_amount=None):
     return train_inputs, test_inputs
 
 
-def print_guesses(test_inputs, weights):
+def print_guesses(test_inputs, weights, decimal_places=2):
     cost_sum = 0
     for test_inp in test_inputs:
         classified_label = classify(weights, test_inp)
@@ -23,7 +23,8 @@ def print_guesses(test_inputs, weights):
         cost_sum += cost_
         guess = np.argmax(classified_label)
         actual = np.argmax(test_inp.label)
-        print(f'{guess=}, {actual=}, cost={round(cost_, 2)}\n'
-              f'\tlabel vector: {list(np.round(classified_label, 1))}')
+        print(f'{guess=}, {actual=}, cost={round(cost_, decimal_places)}\n'
+              f'\tlabel vector: '
+              f'{list(np.round(classified_label, decimal_places))}')
 
     print(f'Overall cost: {cost_sum}')
