@@ -19,7 +19,7 @@ def update(ideals: Iterable[Array], outputs: Iterable[Array],
     full_update = sum(contract((ideal - out), inp, axes=0).transpose(1, 2, 0, 3, 4)
                       for ideal, out, inp in zip(ideals, outputs, inputs))
     # TODO: make factor a variable
-    small_update = - 0.000000001 * full_update
+    small_update = 0.000000001 * full_update
     assert isinstance(small_update, Array)
     return small_update
 

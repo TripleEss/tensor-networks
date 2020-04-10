@@ -32,11 +32,12 @@ if __name__ == '__main__':
     ]) / 1.0286
 
     # optimize
-    util.print_guesses(test_inputs, weights)
+    util.print_guesses(test_inputs, weights, decimal_places=3)
     sweeper = sweep(weights, train_inputs, svd=partial(truncated_svd, max_chi=20))
-    logging_interval = len(weights) * 4
-    for i in range(0, logging_interval * 3 + 1):
+    logging_interval = len(weights)
+    for i in range(1, logging_interval * 4):
         if i % logging_interval == 0:
-            util.print_guesses(test_inputs, weights)
-            print(f'### Iterations {i} - {i + logging_interval} ###')
+            print(f'### Iterations {i} - {i + logging_interval - 1} ###')
         consume(sweeper, 1)
+        if i % logging_interval == logging_interval - 1:
+            util.print_guesses(test_inputs, weights, decimal_places=3)

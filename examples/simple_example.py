@@ -23,10 +23,10 @@ FILE_PATH = './data/2x2-gradient/2x2.mat'
 
 def generate_data_set():
     while True:
-        b0 = 0  # random.random() * 0.6
-        b1 = 0  # random.random() * 0.6
-        d0 = 255  # min(b0 + 0.5 * random.random(), 1.0)
-        d1 = 255  # min(b1 + 0.5 * random.random(), 1.0)
+        b0 = random.randint(0, 140)
+        b1 = random.randint(0, 140)
+        d0 = min(b0 + random.randint(0, 127), 255)
+        d1 = min(b1 + random.randint(0, 127), 255)
         label = random.choice([0, 1])
         if label == 0:
             yield np.array([b0, d0, b1, d1]), 0
@@ -72,7 +72,7 @@ if __name__ == '__main__':
           .reshape(2, 2, 2)
           .transpose(2, 0, 1)] * (len(train_inputs[0].array) - 2)),
         np.ones((2, 2, 1)),
-    ]) / 1.0286
+    ])
 
     # optimize
     util.print_guesses(test_inputs, weights, decimal_places=10)
