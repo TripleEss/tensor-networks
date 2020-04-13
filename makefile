@@ -6,4 +6,4 @@ test:
 
 lint:
 	-flake8
-	mypy
+	find examples/ tensor_networks/ -type f -name "*.py" | xargs mypy
