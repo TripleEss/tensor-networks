@@ -21,12 +21,12 @@ def contract(*tensors: Array, **kwargs) -> Array:
     return last(contractions(*tensors, **kwargs))
 
 
-def attach(core: Array, attachment: Array, **kwargs) -> Array:
-    return contract(core, attachment, axes=(1, 0), **kwargs)
-
-
 def tensor_product(*tensors: Array, **kwargs) -> Array:
     """
     :return: The array obtained by calculating the tensor product
     """
     return contract(*tensors, axes=0, **kwargs)
+
+
+def attach(core: Array, attachment: Array, **kwargs) -> Array:
+    return contract(core, attachment, axes=(1, 0), **kwargs)
