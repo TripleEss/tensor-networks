@@ -9,7 +9,7 @@ from functools import partial
 from itertools import islice
 
 from more_itertools import consume
-from scipy.io import savemat
+from scipy.io import savemat  # type: ignore[import]
 
 from examples.utils.greyscale_image import image_feature_with_index_label
 from examples.utils.io import load_mat_data_set, print_guesses

@@ -1,4 +1,4 @@
-from scipy.io import loadmat
+from scipy.io import loadmat  # type: ignore[import]
 
 from tensor_networks.classification import classify, cost
 from tensor_networks.patched_numpy import np
