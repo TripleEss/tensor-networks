@@ -29,4 +29,7 @@ def tensor_product(*tensors: Array, **kwargs) -> Array:
 
 
 def attach(core: Array, attachment: Array, **kwargs) -> Array:
+    """
+    :return: The array obtained by contracting a train core with an input
+    """
     return contract(core, attachment, axes=(1, 0), **kwargs)

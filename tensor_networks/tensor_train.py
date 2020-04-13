@@ -5,7 +5,7 @@ from copy import deepcopy
 
 from tensor_networks import contraction
 from tensor_networks.annotations import *
-from tensor_networks.transposition import transpose_bond_indices
+from tensor_networks.transposition import transpose_outer_indices
 
 
 class TensorTrain(Sequence[Array]):
@@ -70,7 +70,7 @@ class TensorTrain(Sequence[Array]):
         if isinstance(item, slice):
             if item.step is not None and item.step < 0:
                 # transpose bond indices if the train gets reversed
-                value = [transpose_bond_indices(arr) for arr in value]
+                value = [transpose_outer_indices(arr) for arr in value]
             return type(self)(value)
         return value
 

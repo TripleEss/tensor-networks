@@ -11,7 +11,7 @@ from tensor_networks.contraction import contract, tensor_product, attach
 from tensor_networks.inputs import Input
 from tensor_networks.svd import truncated_svd, split
 from tensor_networks.tensor_train import TensorTrain
-from tensor_networks.transposition import transpose_bond_indices
+from tensor_networks.transposition import transpose_outer_indices
 
 
 def update(ideals: Iterable[Array], outputs: Iterable[Array],
@@ -132,7 +132,7 @@ def sweep(ttrain: TensorTrain,
         maybe_transpose_bond_indices: Callable[[Array], Array] = (
             utils.identity  # type: ignore[assignment]
             if direction == Direction.LEFT_TO_RIGHT
-            else transpose_bond_indices
+            else transpose_outer_indices
         )
         l_label_core = maybe_transpose_bond_indices(ttrain[label_index])
         r_other_core = maybe_transpose_bond_indices(ttrain[other_index])

@@ -1,4 +1,4 @@
-from tensor_networks.transposition import transpose_bond_indices, reverse_transpose
+from tensor_networks.transposition import transpose_outer_indices, reverse_dimensions
 from tests.helpers import constant_fixture, arange_from_shape
 
 from tensor_networks.patched_numpy import np
@@ -13,8 +13,8 @@ arr = constant_fixture(params=[
 
 
 def test_transpose_bond_indices(arr):
-    assert (arr == transpose_bond_indices(transpose_bond_indices(arr))).all()
+    assert (arr == transpose_outer_indices(transpose_outer_indices(arr))).all()
 
 
 def test_reverse_transpose(arr):
-    assert (arr == reverse_transpose(reverse_transpose(arr))).all()
+    assert (arr == reverse_dimensions(reverse_dimensions(arr))).all()

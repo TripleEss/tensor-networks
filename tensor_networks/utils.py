@@ -20,6 +20,7 @@ def get_last(l: Sequence[_T1], default: Any = None) -> Union[_T1, Any]:
 
 
 def get_last_or_one_tensor(l: Sequence[_T1]) -> Union[_T1, Array]:
+    # TODO: use neutral_array
     return get_last(l, default=ONE_TENSOR)
 
 
@@ -36,7 +37,6 @@ def swing_pairwise(seq: Sequence[_T1],
                    start: int = 0,
                    direction: Direction = Direction.LEFT_TO_RIGHT
                    ) -> Iterator[Tuple[_T1, _T1, Direction]]:
-    # TODO: documentation
     seq_rev = list(reversed(seq))[1:-1]
     iter1, iter2 = tee(cycle(chain(seq, seq_rev)))
     next(iter2, None)

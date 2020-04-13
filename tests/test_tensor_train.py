@@ -5,7 +5,7 @@ import pytest
 from pytest import approx
 
 from tensor_networks.decomposition import decompose
-from tensor_networks.transposition import reverse_transpose
+from tensor_networks.transposition import reverse_dimensions
 from tests.helpers import constant_fixture
 
 
@@ -70,7 +70,7 @@ def test_reversed(tt, reduced):
     for x, y in zip(reversed(tt), rev):
         assert (x == y).all()
     rev_reassembled = rev.contract(fully=True)
-    assert reverse_transpose(rev_reassembled) == approx(reduced)
+    assert reverse_dimensions(rev_reassembled) == approx(reduced)
 
 
 def test_arithmetic(tt):
