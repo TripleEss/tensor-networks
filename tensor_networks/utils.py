@@ -9,7 +9,6 @@ from tensor_networks.annotations import *
 _T1 = TypeVar('_T1')
 _T2 = TypeVar('_T2')
 
-ONE_TENSOR = np.array([1])
 
 def get(l: Sequence[_T1], index: int, default: Any = None) -> Union[_T1, Any]:
     return l[index] if index < len(l) and abs(index) <= len(l) else default
@@ -17,11 +16,6 @@ def get(l: Sequence[_T1], index: int, default: Any = None) -> Union[_T1, Any]:
 
 def get_last(l: Sequence[_T1], default: Any = None) -> Union[_T1, Any]:
     return get(l, index=-1, default=default)
-
-
-def get_last_or_one_tensor(l: Sequence[_T1]) -> Union[_T1, Array]:
-    # TODO: use neutral_array
-    return get_last(l, default=ONE_TENSOR)
 
 
 def identity(x: _T1) -> _T1:

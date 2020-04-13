@@ -5,7 +5,7 @@ from more_itertools import consume
 
 from tensor_networks.patched_numpy import np
 from tensor_networks import utils
-from tensor_networks.utils import Direction
+from tensor_networks.utils import Direction, neutral_array
 from tensor_networks.annotations import *
 from tensor_networks.contraction import contract, tensor_product, attach
 from tensor_networks.inputs import Input
@@ -44,7 +44,7 @@ def shift_accumulations(optimized_label_core: Array, label_input: Array,
 
     # if there are no cores before optimized_label_core then
     # we simply remove its mock index (by contracting with ONE_TENSOR)
-    previous_label_reduced = utils.get_last_or_one_tensor(label_acc)
+    previous_label_reduced = utils.get_last(label_acc, default=neutral_array(1))
     new_label_reduced = contract(
         previous_label_reduced,
         attach(optimized_label_core, label_input)
@@ -114,9 +114,9 @@ def sweep(ttrain: TensorTrain,
         l_label_accs, r_other_accs = ((acc_lefts, acc_rights)
                                       if direction == Direction.LEFT_TO_RIGHT
                                       else (acc_rights, acc_lefts))
-        l_label_reduceds = [utils.get_last_or_one_tensor(acc)
+        l_label_reduceds = [utils.get_last(acc, default=neutral_array(1))
                             for acc in l_label_accs]
-        r_other_reduceds = [utils.get_last_or_one_tensor(acc)
+        r_other_reduceds = [utils.get_last(acc, default=neutral_array(1))
                             for acc in r_other_accs]
 
         label_inputs = [inp.array[label_index] for inp in inputs]
