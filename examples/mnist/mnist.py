@@ -9,7 +9,7 @@ from examples.utils.greyscale_image import image_feature_with_index_label
 from examples.utils.io import load_mat_data_set, print_guesses
 from examples.utils.weights import starting_weights
 from tensor_networks.patched_numpy import np
-from tensor_networks.svd import truncated_svd
+from tensor_networks.decomposition import truncated_svd
 from tensor_networks.training import sweep
 
 

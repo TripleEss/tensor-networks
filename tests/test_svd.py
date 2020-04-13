@@ -2,7 +2,7 @@ from tensor_networks.patched_numpy import np
 from pytest import approx
 
 from tensor_networks.contraction import contract
-from tensor_networks.svd import truncated_svd, split
+from tensor_networks.decomposition import truncated_svd, split
 from tests.helpers import constant_fixture, arange_from_shape
 
 

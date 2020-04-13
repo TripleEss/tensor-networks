@@ -5,7 +5,7 @@ from tensor_networks.patched_numpy import np
 from PIL import Image
 
 from tensor_networks.annotations import *
-from tensor_networks.svd import truncated_svd
+from tensor_networks.decomposition import truncated_svd
 
 
 def img_to_array(path: str) -> Array:
