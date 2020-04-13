@@ -48,3 +48,11 @@ def swing_pairwise(seq: Sequence[_T1],
         start = 2 * (len(seq) - 1) - start
 
     return islice(zip(iter1, iter2, directions), start, None)
+
+
+def neutral_array(*shape: int, **kwargs):
+    arr = np.zeros(shape, **kwargs)
+    for i in range(max(shape)):
+        ind = tuple(min(i, j-1) for j in shape)
+        arr[ind] = 1
+    return arr

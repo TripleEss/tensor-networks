@@ -1,3 +1,9 @@
+"""
+TODO: explain this example
+from left to right:
+0 == bright to dark
+1 == dark to bright
+"""
 import random
 from functools import partial
 from itertools import islice
@@ -5,20 +11,15 @@ from itertools import islice
 from more_itertools import consume
 from scipy.io import savemat
 
-from examples import util
-from tensor_networks.annotations import *
-from tensor_networks.feature import Input, color_abs_to_percentage, feature
+from examples.utils.greyscale_image import image_feature_with_index_label
+from examples.utils.io import load_mat_data_set, print_guesses
+from examples.utils.weights import starting_weights
 from tensor_networks.patched_numpy import np
-
-# from left to right:
-# 0 == bright to dark
-# 1 == dark to bright
 from tensor_networks.svd import truncated_svd
-from tensor_networks.tensor_train import TensorTrain
 from tensor_networks.training import sweep
 
 
-FILE_PATH = './data/2x2-gradient/2x2.mat'
+FILE_PATH = './examples/dummy_gradient/2x2-gradients.mat'
 
 
 def generate_data_set():
@@ -49,38 +50,26 @@ def save_data_set(n):
     })
 
 
-def img_feature(values: Array, label: int) -> Input:
-    return Input(
-        np.array(list(map(feature, map(color_abs_to_percentage, values)))),
-        label=np.array([1, 0]) if label == 0 else np.array([0, 1]),
-    )
-
-
 if __name__ == '__main__':
     np.GLOBAL_NUMERIC_DATA_TYPE = np.float32
-    train_inputs, test_inputs = util.load_mat_data_set(
+    train_inputs, test_inputs = load_mat_data_set(
         path=FILE_PATH,
-        feature=img_feature,
+        feature=image_feature_with_index_label(maximum_index=1),
         train_amount=500,
         test_amount=50,
     )
 
     # starting weights
-    weights = TensorTrain([
-        np.ones((1, 2, 2, 2)),
-        *([np.array(2 * list(np.eye(2, 2)))
-          .reshape(2, 2, 2)
-          .transpose(2, 0, 1)] * (len(train_inputs[0].array) - 2)),
-        np.ones((2, 2, 1)),
-    ])
+    weights = starting_weights(input_length=len(train_inputs[0].array),
+                               label_length=2)
 
     # optimize
-    util.print_guesses(test_inputs, weights, decimal_places=10)
+    print_guesses(test_inputs, weights)
     sweeper = sweep(weights, train_inputs, svd=partial(truncated_svd, max_chi=20))
     logging_interval = len(weights)
-    for i in range(1, logging_interval * 4):
+    for i in range(1, logging_interval * 10):
         if i % logging_interval == 0:
-            print(f'### Iterations {i} - {i + logging_interval -1} ###')
+            print(f'### Iterations {i} - {i + logging_interval - 1} ###')
         consume(sweeper, 1)
         if i % logging_interval == logging_interval - 1:
-            util.print_guesses(test_inputs, weights, decimal_places=10)
+            print_guesses(test_inputs, weights)

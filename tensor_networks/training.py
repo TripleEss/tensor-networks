@@ -8,7 +8,7 @@ from tensor_networks import utils
 from tensor_networks.utils import Direction
 from tensor_networks.annotations import *
 from tensor_networks.contraction import contract, tensor_product, attach
-from tensor_networks.feature import Input
+from tensor_networks.inputs import Input
 from tensor_networks.svd import truncated_svd, split
 from tensor_networks.tensor_train import TensorTrain
 from tensor_networks.transposition import transpose_bond_indices
@@ -19,7 +19,7 @@ def update(ideals: Iterable[Array], outputs: Iterable[Array],
     full_update = sum(contract((ideal - out), inp, axes=0).transpose(1, 2, 0, 3, 4)
                       for ideal, out, inp in zip(ideals, outputs, inputs))
     # TODO: make factor a variable
-    small_update = 0.000000001 * full_update
+    small_update = 0.001 * full_update
     assert isinstance(small_update, Array)
     return small_update
 

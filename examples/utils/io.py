@@ -15,16 +15,30 @@ def load_mat_data_set(path, feature, train_amount=None, test_amount=None):
     return train_inputs, test_inputs
 
 
-def print_guesses(test_inputs, weights, decimal_places=2):
+def print_guesses(test_inputs, weights, decimal_places=None):
     cost_sum = 0
+    correct_guesses = 0
     for test_inp in test_inputs:
         classified_label = classify(weights, test_inp)
         cost_ = cost(classified_label, test_inp.label)
-        cost_sum += cost_
         guess = np.argmax(classified_label)
         actual = np.argmax(test_inp.label)
-        print(f'{guess=}, {actual=}, cost={round(cost_, decimal_places)}\n'
-              f'\tlabel vector: '
-              f'{list(np.round(classified_label, decimal_places))}')
+        correct = guess == actual
 
-    print(f'Overall cost: {cost_sum}')
+        guess_vs_actual_str = (f'✅ {guess}'
+                               if correct
+                               else f'❌ {guess} ({actual=})')
+        rounded_label = (classified_label
+                         if decimal_places is None
+                         else np.round(classified_label, decimal_places))
+        print(f'{guess_vs_actual_str :15}; '
+              f'cost={cost_} '
+              f'{list(rounded_label)}')
+
+        cost_sum += cost_
+        if correct:
+            correct_guesses += 1
+
+    print(f'Overall cost: {cost_sum}\n'
+          f'Success rate: {correct_guesses / len(test_inputs) :.0%} '
+          f'({correct_guesses}/{len(test_inputs)})')

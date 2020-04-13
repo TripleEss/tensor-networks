@@ -1,7 +1,7 @@
 from tensor_networks.annotations import *
 
 from tensor_networks.patched_numpy import np
-from tensor_networks.feature import Input
+from tensor_networks.inputs import Input
 from tensor_networks.tensor_train import TensorTrain
 
 
