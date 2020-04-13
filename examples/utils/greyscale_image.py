@@ -18,7 +18,7 @@ def color_abs_to_percentage(value: AbsColor) -> PartialColor:
 def greyscale_feature(percentage: PartialColor) -> Array:
     """
     :param percentage: A grey value
-    :return: An array of a black value and a white value with a sum of 1.
+    :return: An array of a black value and a white value with a sum of 1
     """
     return np.array([cos(pi / 2 * percentage), sin(pi / 2 * percentage)])
 
