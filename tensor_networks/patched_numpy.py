@@ -35,6 +35,7 @@ else:
 
 GLOBAL_NUMERIC_DATA_TYPE: typing.Optional[np.dtype] = None
 
+
 def _as_global_dtype(array_constructor: typing.Callable[..., np.ndarray]):
     @functools.wraps(array_constructor)
     def changed_dtype(*args, **kwargs):
