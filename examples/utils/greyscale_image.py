@@ -1,9 +1,6 @@
-from functools import partial
 from math import cos, pi, sin
 
-from examples.utils.label import index_label
 from tensor_networks.annotations import *
-from tensor_networks.inputs import Input
 from tensor_networks.patched_numpy import np
 
 
