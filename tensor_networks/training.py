@@ -16,7 +16,21 @@ from tensor_networks.transposition import transpose_outer_indices
 
 def update(ideals: Iterable[Array], outputs: Iterable[Array],
            inputs: Iterable[Array]) -> Array:
-    full_update = sum(contract((ideal - out), inp, axes=0).transpose(1, 2, 0, 3, 4)
+    """
+    Calculate an update for two contracted cores.
+
+    :param ideals:
+        The actual label vectors we want to approximate as output
+    :param outputs:
+        The label vectors calculated by contracting our two cores with `inputs`
+    :param inputs:
+        The tensor product of the surrounding tensors of our two cores
+    :return:
+        An array with the same shape as the two contracted cores with values that
+        are comparatively small to the actual contracted cores.
+        This can then be used to update the original two cores.
+    """
+    full_update = sum(tensor_product(ideal - out, inp).transpose(1, 2, 0, 3, 4)
                       for ideal, out, inp in zip(ideals, outputs, inputs))
     # TODO: make factor a variable
     small_update = 0.001 * full_update
@@ -29,8 +43,7 @@ def output(to_optimize: Array, local_in: Array) -> Array:
 
 
 def shift_accumulations(optimized_label_core: Array, label_input: Array,
-                        label_acc: List[Array], other_acc: List[Array]
-                        ) -> None:
+                        label_acc: List[Array], other_acc: List[Array]) -> None:
     """
     modifies label_acc and other_acc
     """
