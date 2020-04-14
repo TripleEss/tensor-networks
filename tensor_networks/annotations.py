@@ -18,6 +18,6 @@ Array = np.ndarray
 SVDTuple = Tuple[Array, Array, Array]
 SVDCallable = Callable[..., SVDTuple]
 SVDToInt = Callable[[Array, Array, Array], int]
-Updater = Callable[[Iterable[Array], Iterable[Array]], Array]
+Updater = Callable[[Array, Array, Array], Array]
 AbsColor = int
 PartialColor = float

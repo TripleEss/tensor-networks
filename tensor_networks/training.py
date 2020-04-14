@@ -14,31 +14,20 @@ from tensor_networks.tensor_train import TensorTrain
 from tensor_networks.transposition import transpose_outer_indices
 
 
-def update(ideals: Iterable[Array], outputs: Iterable[Array],
-           inputs: Iterable[Array]) -> Array:
+def update(ideal: Array, output: Array, input_: Array) -> Array:
     """
-    Calculate an update for two contracted cores.
-
-    :param ideals:
-        The actual label vectors we want to approximate as output
-    :param outputs:
-        The label vectors calculated by contracting our two cores with `inputs`
-    :param inputs:
-        The tensor product of the surrounding tensors of our two cores
-    :return:
-        An array with the same shape as the two contracted cores with values that
-        are comparatively small to the actual contracted cores.
-        This can then be used to update the original two cores.
+    Calculate an update for two contracted cores based on an input.
+    The returned update array has the same shape as the two contracted cores
+    and values that are relatively small compared to the cores.
     """
-    full_update = sum(tensor_product(ideal - out, inp).transpose(1, 2, 0, 3, 4)
-                      for ideal, out, inp in zip(ideals, outputs, inputs))
+    full_update = tensor_product(ideal - output, input_).transpose(1, 2, 0, 3, 4)
     # TODO: make factor a variable
     small_update = 0.001 * full_update
     assert isinstance(small_update, Array)
     return small_update
 
 
-def output(to_optimize: Array, local_in: Array) -> Array:
+def calculate_output(to_optimize: Array, local_in: Array) -> Array:
     return contract(to_optimize, local_in, axes=([0, 1, 3, 4], [0, 1, 2, 3]))
 
 
@@ -72,7 +61,7 @@ def sweep(ttrain: TensorTrain,
           inputs: Sequence[Input],
           label_index: int = 0,
           starting_direction: Direction = Direction.LEFT_TO_RIGHT,
-          updater: Updater = None,
+          updater: Updater = update,
           svd: SVDCallable = truncated_svd
           ) -> Iterator[None]:
     """
@@ -86,9 +75,6 @@ def sweep(ttrain: TensorTrain,
     :param svd: The function used for singular value decomposition
     """
     assert len(inputs[0].array) == len(ttrain)
-
-    if updater is None:
-        updater = partial(update, [inp.label for inp in inputs])
 
     index_generator1, index_generator2 = tee(
         utils.swing_pairwise(range(len(ttrain)),
@@ -151,10 +137,13 @@ def sweep(ttrain: TensorTrain,
         r_other_core = maybe_transpose_bond_indices(ttrain[other_index])
         # core with label is contracted with the next core
         to_optimize = contract(l_label_core, r_other_core)
-        outputs = [output(to_optimize, local_inp)
-                   for local_inp in local_inputs]
+        outputs = [calculate_output(to_optimize, local_in)
+                   for local_in in local_inputs]
 
-        optimized = to_optimize + updater(outputs, local_inputs)
+        update_ = sum(updater(label_vec, out, local_in)
+                      for label_vec, out, local_in
+                      in zip((inp.label for inp in inputs), outputs, local_inputs))
+        optimized = to_optimize + update_
         optimized *= np.linalg.norm(to_optimize) / np.linalg.norm(optimized)
         l_label_core, r_other_core = split(optimized, before_index=2, svd=svd)
         # transpose label index into its correct position (from 1 to 2)
