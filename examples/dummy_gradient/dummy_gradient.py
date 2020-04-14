@@ -11,8 +11,9 @@ from itertools import islice
 from more_itertools import consume
 from scipy.io import savemat  # type: ignore[import]
 
-from examples.utils.greyscale_image import image_feature_with_index_label
+from examples.utils.greyscale_image import image_feature
 from examples.utils.io import load_mat_data_set, print_guesses
+from examples.utils.label import index_label
 from examples.utils.weights import starting_weights
 from tensor_networks.patched_numpy import np
 from tensor_networks.decomposition import truncated_svd
@@ -35,14 +36,14 @@ def generate_data_set():
             yield np.array([d0, b0, d1, b1]), 1
 
 
-def save_data_set(n):
+def save_data_set(n: int, file_path=FILE_PATH):
     trainX, trainY = zip(*list(islice(generate_data_set(), n)))
     testX, testY = zip(*list(islice(generate_data_set(), n)))
     trainX = np.array(list(trainX))
     trainY = np.array(list(trainY))
     testX = np.array(list(testX))
     testY = np.array(list(testY))
-    savemat(FILE_PATH, {
+    savemat(file_path, {
         'trainX': trainX,
         'trainY': trainY,
         'testX': testX,
@@ -54,7 +55,7 @@ if __name__ == '__main__':
     np.GLOBAL_NUMERIC_DATA_TYPE = np.float32
     train_inputs, test_inputs = load_mat_data_set(
         path=FILE_PATH,
-        feature=image_feature_with_index_label(maximum_index=1),
+        feature=lambda x, y: (image_feature(x), index_label(y, 1)),
         train_amount=500,
         test_amount=50,
     )

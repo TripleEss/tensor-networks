@@ -1,17 +1,20 @@
 from scipy.io import loadmat  # type: ignore[import]
 
 from tensor_networks.classification import classify, cost
+from tensor_networks.inputs import Input
 from tensor_networks.patched_numpy import np
 
 
 def load_mat_data_set(path, feature, train_amount=None, test_amount=None):
     data = loadmat(path, squeeze_me=True)
 
-    trainX, trainY = data['trainX'][:train_amount], data['trainY'][:train_amount]
-    testX, testY = data['testX'][:test_amount], data['testY'][:test_amount]
+    trainX = data['trainX'][:train_amount]
+    trainY = data['trainY'][:train_amount]
+    testX = data['testX'][:test_amount]
+    testY = data['testY'][:test_amount]
 
-    train_inputs = list(map(feature, trainX, trainY))
-    test_inputs = list(map(feature, testX, testY))
+    train_inputs = [Input(*feature(x, y)) for x, y in zip(trainX, trainY)]
+    test_inputs = [Input(*feature(x, y)) for x, y in zip(testX, testY)]
     return train_inputs, test_inputs
 
 

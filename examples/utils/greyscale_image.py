@@ -27,13 +27,3 @@ def image_feature(absolute_colors: Array) -> Array:
     return np.array(list(map(greyscale_feature,
                              map(color_abs_to_percentage,
                                  absolute_colors))))
-
-
-def image_feature_with(label_to_array: Callable[[int], Array]
-                       ) -> Callable[[Array, int], Input]:
-    return lambda absolute_colors, label: Input(image_feature(absolute_colors),
-                                                label_to_array(label))
-
-
-def image_feature_with_index_label(maximum_index: int) -> Callable[[Array, int], Input]:
-    return image_feature_with(partial(index_label, maximum_index=maximum_index))

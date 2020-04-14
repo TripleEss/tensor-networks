@@ -5,8 +5,9 @@ from functools import partial
 
 from more_itertools import consume
 
-from examples.utils.greyscale_image import image_feature_with_index_label
+from examples.utils.greyscale_image import image_feature
 from examples.utils.io import load_mat_data_set, print_guesses
+from examples.utils.label import index_label
 from examples.utils.weights import starting_weights
 from tensor_networks.patched_numpy import np
 from tensor_networks.decomposition import truncated_svd
@@ -20,7 +21,7 @@ if __name__ == '__main__':
     # load data set
     train_inputs, test_inputs = load_mat_data_set(
         path='./examples/mnist/MNIST.mat',
-        feature=image_feature_with_index_label(maximum_index=9),
+        feature=lambda x, y: (image_feature(x), index_label(y, 9)),
         train_amount=50,
         test_amount=50
     )
