@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from copy import deepcopy
+from copy import deepcopy, copy
 
 from tensor_networks import contraction
 from tensor_networks.annotations import *
@@ -23,14 +23,14 @@ class TensorTrain(Sequence[Array]):
     def __init__(self, cores: MutableSequence[Array]):
         self.cores = cores
 
-    def contractions(self, keep_mock_index=True, **kwargs) -> Iterable[Array]:
-        cores: Sequence[Array] = self.cores
+    def contractions(self, keep_mock_indices=True, **kwargs) -> Iterable[Array]:
+        cores = copy(self.cores)
 
-        if not keep_mock_index:
-            first = cores[0] if len(cores) > 0 else None
-            if first is not None and first.shape[0] == 1:
-                squeezed_first = first.squeeze(axis=0)
-                cores = [squeezed_first, *cores[1:]]
+        if not keep_mock_indices and len(cores) > 0:
+            if cores[0].shape[0] == 1:
+                cores[0] = cores[0].squeeze(axis=0)
+            if cores[-1].shape[-1] == 1:
+                cores[-1] = cores[-1].squeeze(axis=-1)
 
         return contraction.contractions(*cores, **kwargs)
 
@@ -101,8 +101,8 @@ class TensorTrain(Sequence[Array]):
 
     def __repr__(self) -> str:
         type_name = type(self).__name__
-        cores_string = f',\n{" " * (len(type_name) + 1)}' \
-                       .join(re.sub(r'\s+', ' ', repr(c)) for c in self)
+        cores_string = (f',\n{" " * (len(type_name) + 1)}'
+                        .join(re.sub(r'\s+', ' ', repr(c)) for c in self))
         return f'{type_name}({cores_string})'
 
     def __copy__(self) -> TensorTrain:
