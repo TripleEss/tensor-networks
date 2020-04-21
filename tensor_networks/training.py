@@ -52,8 +52,8 @@ class InputFrame:
     def __init__(self, tensor_train: TensorTrain, input_: Input):
         self.tensor_train = tensor_train
         self.input = input_
-        self.accumulated_left = []
-        self.accumulated_right = []
+        self.accumulated_left: List[Array] = []
+        self.accumulated_right: List[Array] = []
 
     def shift(self, indices: IndexFrame):
         """

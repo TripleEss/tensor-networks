@@ -38,7 +38,7 @@ def truncated_svd(matrix: Array, *,
     u, s, v = standard_svd(matrix)
 
     if compute_chi:
-        max_chi = min(max_chi, compute_chi(u, s, v))
+        max_chi = min(max_chi, compute_chi(SVD(u, s, v)))
 
     if max_chi is None or len(s) <= max_chi:
         new_u, new_s, new_v = u, s, v
