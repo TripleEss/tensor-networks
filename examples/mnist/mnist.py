@@ -3,8 +3,6 @@ TODO: explain this example
 """
 from functools import partial
 
-from more_itertools import consume
-
 from examples.utils.greyscale_image import image_feature
 from examples.utils.io import load_mat_data_set, print_guesses
 from tensor_networks.decomposition import truncated_svd
