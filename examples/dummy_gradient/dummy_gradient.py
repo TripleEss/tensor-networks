@@ -8,16 +8,15 @@ import random
 from functools import partial
 from itertools import islice
 
-from more_itertools import consume
 from scipy.io import savemat  # type: ignore[import]
 
 from examples.utils.greyscale_image import image_feature
 from examples.utils.io import load_mat_data_set, print_guesses
-from tensor_networks.inputs import index_label
-from tensor_networks.weights import starting_weights
-from tensor_networks.patched_numpy import np
 from tensor_networks.decomposition import truncated_svd
-from tensor_networks.training import sweep
+from tensor_networks.inputs import index_label
+from tensor_networks.patched_numpy import np
+from tensor_networks.training import sweep_entire_train
+from tensor_networks.weights import starting_weights
 
 
 FILE_PATH = './examples/dummy_gradient/2x2-gradients.mat'
@@ -66,11 +65,11 @@ if __name__ == '__main__':
 
     # optimize
     print_guesses(test_inputs, weights)
-    sweeper = sweep(weights, train_inputs, svd=partial(truncated_svd, max_chi=20))
-    logging_interval = len(weights)
-    for i in range(1, logging_interval * 10):
-        if i % logging_interval == 0:
-            print(f'### Iterations {i} - {i + logging_interval - 1} ###')
-        consume(sweeper, 1)
-        if i % logging_interval == logging_interval - 1:
-            print_guesses(test_inputs, weights)
+    print()
+    sweep_iterator = sweep_entire_train(weights, train_inputs,
+                                        svd=partial(truncated_svd, max_chi=20))
+    for i in range(1, 4):
+        print(f'### Sweep {i} ###')
+        next(sweep_iterator)
+        print_guesses(test_inputs, weights)
+        print()
