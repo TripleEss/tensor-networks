@@ -9,5 +9,5 @@ def cost(labels1: Array, labels2: Array) -> float:
     return np.sum(np.square(labels1 - labels2)) / 2
 
 
-def classify(ttrain: TensorTrain, input: Input):
-    return ttrain.attach(input.array).contract(fully=True)
+def classify(tensor_train: TensorTrain, input: Input):
+    return tensor_train.attach(input.array).contract(fully=True)

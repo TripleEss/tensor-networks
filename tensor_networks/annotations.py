@@ -10,14 +10,9 @@ __all__ = (
     'Generator', 'Reversible', 'MutableSequence', 'NamedTuple',
 
     # custom
-    'Array', 'SVDTuple', 'SVDCallable', 'SVDToInt', 'AbsColor', 'PartialColor',
-    'Updater',
+    'Array', 'AbsColor', 'PartialColor',
 )
 
 Array = np.ndarray
-SVDTuple = Tuple[Array, Array, Array]
-SVDCallable = Callable[..., SVDTuple]
-SVDToInt = Callable[[Array, Array, Array], int]
-Updater = Callable[[Array, Array, Array], Array]
 AbsColor = int
 PartialColor = float

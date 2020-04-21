@@ -8,14 +8,20 @@ from tensor_networks.annotations import *
 from tensor_networks.tensor_train import TensorTrain
 
 
+class SVD(NamedTuple):
+    u: Array
+    s: Array
+    v: Array
+
+
 standard_svd = partial(np.linalg.svd, full_matrices=False)
 
 
 def truncated_svd(matrix: Array, *,
-                  compute_chi: Optional[SVDToInt] = None,
+                  compute_chi: Optional[Callable[[SVD], int]] = None,
                   max_chi: Optional[int] = None,
                   normalize: bool = True
-                  ) -> SVDTuple:
+                  ) -> SVD:
     """
     Calculates the Singular Value Decomposition for `matrix` and truncates it
     so that the returned matrices all have dimensions with cardinalities
@@ -45,11 +51,11 @@ def truncated_svd(matrix: Array, *,
 
     logging.debug(f'{matrix.shape} --SVD--> {u.shape} {s.shape} {v.shape}'
                   f' --truncated--> {new_u.shape} {new_s.shape} {new_v.shape}')
-    return new_u, new_s, new_v
+    return SVD(new_u, new_s, new_v)
 
 
 def split(tensor: Array, before_index: int, *,
-          svd: SVDCallable = truncated_svd, **kwargs) -> Tuple[Array, Array]:
+          svd: Callable[..., SVD] = truncated_svd, **kwargs) -> Tuple[Array, Array]:
     """
     Split an arbitrary tensor into two tensors before a given index.
 
@@ -76,7 +82,7 @@ def split(tensor: Array, before_index: int, *,
 
 
 def tensor_train_decomposition(tensor: Array, d: int, *,
-                               svd: SVDCallable = truncated_svd,
+                               svd: Callable[..., SVD] = truncated_svd,
                                **svd_kwargs) -> TensorTrain:
     """
     Decompose a tensor into the tensor train format using SVD

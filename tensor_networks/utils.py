@@ -26,6 +26,10 @@ class Direction(Enum):
     LEFT_TO_RIGHT = 1
     RIGHT_TO_LEFT = -1
 
+    def order(self, *args: _T1) -> Tuple[_T1, ...]:
+        """Return all arguments in the order of this direction"""
+        return args[::self.value]
+
 
 def swing_pairwise(seq: Sequence[_T1],
                    start: int = 0,
