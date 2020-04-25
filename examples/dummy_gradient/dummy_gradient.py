@@ -3,10 +3,11 @@ Very basic example used for debugging.
 The input consists of 2x2 greyscale images where the left pixels are either
 brighter (label 1) than the pixels on the right or darker (label 0).
 """
+import time
 from functools import partial
 
 from examples.utils.greyscale_image import image_feature
-from examples.utils.io import load_mat_data_set, print_guesses
+from examples.utils.io import load_mat_data_set, print_test_results
 from tensor_networks.decomposition import truncated_svd
 from tensor_networks.inputs import index_label
 from tensor_networks.patched_numpy import np
@@ -23,7 +24,7 @@ if __name__ == '__main__':
         path=FILE_PATH,
         feature=lambda x, y: (image_feature(x), index_label(y, 1)),
         train_amount=500,
-        test_amount=50,
+        test_amount=500,
     )
 
     # starting weights
@@ -31,12 +32,15 @@ if __name__ == '__main__':
                                label_length=2)
 
     # optimize
-    print_guesses(test_inputs, weights)
+    print_test_results(test_inputs, weights, summary_only=True)
     print()
     sweep_iterator = sweep_entire_train(weights, train_inputs,
                                         svd=partial(truncated_svd, max_chi=20))
     for i in range(1, 4):
-        print(f'### Sweep {i} ###')
+        print(f'### Sweep {i} ... ', end='')
+        start_time = time.time()
         next(sweep_iterator)
-        print_guesses(test_inputs, weights)
+        end_time = time.time()
+        print(f'Done! ({end_time - start_time:.2f}s) ###')
+        print_test_results(test_inputs, weights, summary_only=True)
         print()

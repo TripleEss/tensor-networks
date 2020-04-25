@@ -31,4 +31,4 @@ def save_data_set(n: int, file_path):
         'trainY': trainY,
         'testX': testX,
         'testY': testY,
-    })
+    }, do_compression=True)

@@ -14,7 +14,7 @@ from tensor_networks.utils import Direction, neutral_array
 
 
 def update(ideal_output: Array, calculated_output: Array, local_input: Array,
-           factor=0.001) -> Array:
+           factor=1) -> Array:
     """
     Calculate an update for two contracted cores based on an input.
     The returned update array has the same shape as the two contracted cores
