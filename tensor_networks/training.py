@@ -120,15 +120,15 @@ def contraction_of_cores_to_optimize(tensor_train: TensorTrain, indices: IndexFr
 def apply_optimized_contraction(tensor_train: TensorTrain, optimized: Array,
                                 svd: Callable[..., SVD], indices: IndexFrame) -> None:
     # split the optimized cores
-    l_label_core, r_other_core = split(optimized, before_index=2, svd=svd)
+    label_core, other_core = split(optimized, before_index=2, svd=svd)
     # transpose label index into its correct position (from 1 to 2)
-    r_other_core = r_other_core.swapaxes(1, 2)
+    other_core = other_core.swapaxes(1, 2)
     if indices.direction == Direction.LEFT_TO_RIGHT:
-        tensor_train[indices.label] = l_label_core
-        tensor_train[indices.other] = r_other_core
+        tensor_train[indices.label] = label_core
+        tensor_train[indices.other] = other_core
     else:
-        tensor_train[indices.label] = transpose_outer_indices(l_label_core)
-        tensor_train[indices.other] = transpose_outer_indices(r_other_core)
+        tensor_train[indices.label] = transpose_outer_indices(label_core)
+        tensor_train[indices.other] = transpose_outer_indices(other_core)
 
 
 def sweep(tensor_train: TensorTrain,
