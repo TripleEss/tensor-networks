@@ -13,22 +13,14 @@ This only modifies the behaviour of the local copy of NumPy defined in here.
 """
 import functools
 import importlib
-import logging
 import typing
 
 if typing.TYPE_CHECKING:
     import numpy as _backend_module
     np = numpy = _backend_module
 else:
-    # try:
-    #     import cupy as _backend_module
-    #     _backend_spec = importlib.util.find_spec('cupy')
-    # except ImportError:
-    #     logging.info("Either CuPy or CUDA could not be found. "
-    #                  "Using the regular NumPy library instead.")
     import numpy as _backend_module
     _backend_spec = importlib.util.find_spec('numpy')
-    # end except
     np = numpy = importlib.util.module_from_spec(_backend_spec)
     _backend_spec.loader.exec_module(np)
 
