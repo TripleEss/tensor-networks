@@ -47,7 +47,7 @@ def truncated_svd(matrix: Array, *,
     else:
         new_u, new_s, new_v = u[:, :max_chi], s[:max_chi], v[:max_chi, :]
         if normalize:
-            new_s = new_s * (np.linalg.norm(new_s) / np.linalg.norm(s))
+            new_s *= np.linalg.norm(s) / np.linalg.norm(new_s)
 
     logging.debug(f'{matrix.shape} --SVD--> {u.shape} {s.shape} {v.shape}'
                   f' --truncated--> {new_u.shape} {new_s.shape} {new_v.shape}')
