@@ -14,7 +14,7 @@ from tensor_networks.utils import Direction, neutral_array
 
 
 def update(ideal_output: Array, calculated_output: Array, local_input: Array,
-           factor=1) -> Array:
+           factor=0.001) -> Array:
     """
     Calculate an update for two contracted cores based on an input.
     The returned update array has the same shape as the two contracted cores
@@ -169,10 +169,8 @@ def sweep(tensor_train: TensorTrain,
                    for inp, out, local_inp in zip(inputs, outputs, local_inputs)]
 
         optimized = to_optimize + sum(updates)
-        # keep the previous norm
-        optimized *= np.linalg.norm(to_optimize) / np.linalg.norm(optimized)
-
         apply_optimized_contraction(tensor_train, optimized, svd=svd, indices=indices)
+
         # yield to allow the caller of this function to stop
         # the iterations at some point (otherwise this would go on infinitely)
         yield
