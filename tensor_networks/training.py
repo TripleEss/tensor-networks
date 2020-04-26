@@ -1,5 +1,3 @@
-from dataclasses import field
-
 from more_itertools import consume
 
 from tensor_networks import utils
@@ -7,7 +5,6 @@ from tensor_networks.annotations import *
 from tensor_networks.contraction import contract, tensor_product, attach
 from tensor_networks.decomposition import truncated_svd, split, SVD
 from tensor_networks.inputs import Input
-from tensor_networks.patched_numpy import np
 from tensor_networks.tensor_train import TensorTrain
 from tensor_networks.transposition import transpose_outer_indices
 from tensor_networks.utils import Direction, neutral_array

@@ -4,7 +4,7 @@ TODO: explain this example
 import time
 from functools import partial
 
-from examples.utils.greyscale_image import image_feature, color_abs_to_percentage
+from examples.utils.greyscale_image import image_feature
 from examples.utils.io import load_mat_data_set, print_test_results
 from examples.utils.results import ManyClassificationTests
 from tensor_networks.annotations import *
