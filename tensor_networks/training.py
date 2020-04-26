@@ -181,7 +181,7 @@ def sweep_entire_train(tensor_train: TensorTrain, inputs: Sequence[Input],
     """Each iteration is a sweep of the entire train"""
     sweep_iterator = sweep(tensor_train, inputs, **kwargs)
     while True:
-        consume(sweep_iterator, len(tensor_train))
+        consume(sweep_iterator, len(tensor_train) - 1)
         yield
 
 
