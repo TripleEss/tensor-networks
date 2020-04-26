@@ -11,7 +11,7 @@ class Input:
     label: Array
 
 
-def index_label(label: int, maximum_index: int):
-    array = np.zeros(maximum_index + 1)
+def index_label(label: int, length: int):
+    array = np.zeros(length)
     array[label] = 1
     return array

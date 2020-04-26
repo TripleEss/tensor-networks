@@ -22,7 +22,7 @@ if __name__ == '__main__':
     # load data set
     train_inputs, test_inputs = load_mat_data_set(
         path='./examples/mnist/mnist-14x14.mat',
-        feature=lambda x, y: (image_feature(x), index_label(y, 9)),
+        feature=lambda x, y: (image_feature(x), index_label(y, 10)),
         train_amount=1000,
         test_amount=1000
     )

@@ -22,7 +22,7 @@ if __name__ == '__main__':
     np.GLOBAL_NUMERIC_DATA_TYPE = np.float32
     train_inputs, test_inputs = load_mat_data_set(
         path=FILE_PATH,
-        feature=lambda x, y: (image_feature(x), index_label(y, 1)),
+        feature=lambda x, y: (image_feature(x), index_label(y, 2)),
         train_amount=500,
         test_amount=500,
     )
