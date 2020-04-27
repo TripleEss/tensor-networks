@@ -1,13 +1,7 @@
 """
-(Trickery to allow automatic usage of either CuPy or Numpy depending on
-whether CuPy is available.)
-TODO: this is not implemented yet since there are more differences than \
- expected: https://docs-cupy.chainer.org/en/stable/reference/difference.html
-
-The automatically detected module is copied and exposed via the np and numpy
-variables.
-
-Additionally one can set GLOBAL_NUMERIC_DATA_TYPE to e.g. np.float32
+This module provides a pathed version of NumPy under the `numpy` or `np`
+variable.
+In this patched version on can set GLOBAL_NUMERIC_DATA_TYPE to e.g. np.float32
 to use this as the default data type for NumPy arrays.
 This only modifies the behaviour of the local copy of NumPy defined in here.
 """

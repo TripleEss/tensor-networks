@@ -16,7 +16,6 @@ def update(ideal_output: Array, calculated_output: Array, local_input: Array,
     Calculate an update for two contracted cores based on an input.
     The returned update array has the same shape as the two contracted cores
     and values that are relatively small compared to the cores.
-    TODO: make factor a function
     """
     full_update = tensor_product(ideal_output - calculated_output, local_input)\
         .transpose(1, 2, 0, 3, 4)
@@ -180,14 +179,3 @@ def sweep_entire_train(tensor_train: TensorTrain, inputs: Sequence[Input],
     while True:
         consume(sweep_iterator, len(tensor_train) - 1)
         yield
-
-
-def sweep_until(tensor_train: TensorTrain, inputs: Sequence[Input],
-                iterations: Optional[int] = None, **kwargs) -> None:
-    """
-    Sweep the train until one of these conditions is met:
-        1. The number of `iterations` is exceeded
-    TODO: more break conditions
-    """
-    sweep_iterator = sweep(tensor_train, inputs, **kwargs)
-    consume(sweep_iterator, iterations)
