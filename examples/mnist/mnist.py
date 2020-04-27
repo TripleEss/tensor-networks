@@ -35,6 +35,7 @@ if __name__ == '__main__':
     all_the_tests: List[ManyClassificationTests] = []
     control_results = ManyClassificationTests.create(weights, test_inputs)
     all_the_tests.append(control_results)
+    print('### Results before any optimization:')
     print_test_results(control_results, summary_only=True)
     print()
     sweep_iterator = sweep_entire_train(weights, train_inputs,
