@@ -6,7 +6,7 @@ brighter (label 1) than the pixels on the right or darker (label 0).
 import time
 from functools import partial
 
-from examples.utils.greyscale_image import image_feature
+from examples.utils.greyscale_image import image_feature_sin_cos
 from examples.utils.io import load_mat_data_set, print_test_results
 from tensor_networks.decomposition import truncated_svd
 from tensor_networks.inputs import index_label
@@ -22,7 +22,7 @@ if __name__ == '__main__':
     np.GLOBAL_NUMERIC_DATA_TYPE = np.float32
     train_inputs, test_inputs = load_mat_data_set(
         path=FILE_PATH,
-        feature=lambda x, y: (image_feature(x), index_label(y, 2)),
+        feature=lambda x, y: (image_feature_sin_cos(x), index_label(y, 2)),
         train_amount=500,
         test_amount=500,
     )

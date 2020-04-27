@@ -14,7 +14,7 @@ def color_abs_to_percentage(value: AbsColor) -> PartialColor:
     return value / 255
 
 
-def greyscale_feature(percentage: PartialColor) -> Array:
+def greyscale_feature_sin_cos(percentage: PartialColor) -> Array:
     """
     :param percentage: A grey value
     :return: An array of a black value and a white value with a sum of 1
@@ -22,8 +22,22 @@ def greyscale_feature(percentage: PartialColor) -> Array:
     return np.array([cos(pi / 2 * percentage), sin(pi / 2 * percentage)])
 
 
-def image_feature(absolute_colors: Array) -> Array:
-    return np.array(list(map(greyscale_feature,
+def greyscale_feature_linear(percentage: PartialColor) -> Array:
+    """
+    :param percentage: A grey value
+    :return: An array of a black value and a white value with a sum of 1
+    """
+    return np.array([percentage, 1 - percentage])
+
+
+def image_feature_sin_cos(absolute_colors: Array) -> Array:
+    return np.array(list(map(greyscale_feature_sin_cos,
+                             map(color_abs_to_percentage,
+                                 absolute_colors))))
+
+
+def image_feature_linear(absolute_colors: Array) -> Array:
+    return np.array(list(map(greyscale_feature_linear,
                              map(color_abs_to_percentage,
                                  absolute_colors))))
 

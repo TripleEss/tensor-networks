@@ -1,19 +1,23 @@
-"""
-TODO: explain this example
-"""
 import time
 from functools import partial
 
-from examples.utils.greyscale_image import image_feature
+from examples.utils.greyscale_image import image_feature_sin_cos, image_feature_linear
 from examples.utils.io import load_mat_data_set, print_test_results
 from examples.utils.results import ManyClassificationTests
 from tensor_networks.annotations import *
 from tensor_networks.decomposition import truncated_svd
 from tensor_networks.inputs import index_label
 from tensor_networks.patched_numpy import np
-from tensor_networks.training import sweep_entire_train
+from tensor_networks.training import sweep_entire_train, update
 from tensor_networks.weights import starting_weights
 
+
+TRAIN_AMOUNT = 60000  # max: 60000
+TEST_AMOUNT = 10000  # max: 10000
+CHI = 20
+FACTOR = 0.001
+# e.g. image_feature_sin_cos or image_feature_linear
+FEATURE = image_feature_sin_cos
 
 if __name__ == '__main__':
     # patch arrays to be float32 to enhance performance
@@ -21,10 +25,10 @@ if __name__ == '__main__':
 
     # load data set
     train_inputs, test_inputs = load_mat_data_set(
-        path='./examples/mnist/mnist-14x14.mat',
-        feature=lambda x, y: (image_feature(x), index_label(y, 10)),
-        train_amount=1000,
-        test_amount=1000
+        path='./examples/mnist/mnist-7x7.mat',
+        feature=lambda x, y: (FEATURE(x), index_label(y, 10)),
+        train_amount=TRAIN_AMOUNT,
+        test_amount=TEST_AMOUNT
     )
 
     # starting weights
@@ -39,7 +43,8 @@ if __name__ == '__main__':
     print_test_results(control_results, summary_only=True)
     print()
     sweep_iterator = sweep_entire_train(weights, train_inputs,
-                                        svd=partial(truncated_svd, max_chi=20))
+                                        svd=partial(truncated_svd, max_chi=CHI),
+                                        updater=partial(update, factor=FACTOR))
     for i in range(1, 21):
         print(f'### Sweep {i} ... ', end='')
         start_time = time.time()
