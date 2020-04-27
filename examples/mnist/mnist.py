@@ -12,7 +12,7 @@ from tensor_networks.training import sweep_entire_train, update
 from tensor_networks.weights import starting_weights
 
 
-TRAIN_AMOUNT = 60000  # max: 60000
+TRAIN_AMOUNT = 10000  # max: 60000
 TEST_AMOUNT = 10000  # max: 10000
 CHI = 20
 FACTOR = 0.001
@@ -20,6 +20,7 @@ FACTOR = 0.001
 FEATURE = image_feature_sin_cos
 
 if __name__ == '__main__':
+    print(f'{TRAIN_AMOUNT=}, {TEST_AMOUNT=}, {CHI=}, {FACTOR=}, {FEATURE=}')
     # patch arrays to be float32 to enhance performance
     np.GLOBAL_NUMERIC_DATA_TYPE = np.float32
 
