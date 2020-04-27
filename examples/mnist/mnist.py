@@ -4,7 +4,6 @@ from functools import partial
 from examples.utils.greyscale_image import image_feature_sin_cos, image_feature_linear
 from examples.utils.io import load_mat_data_set, print_test_results
 from examples.utils.results import ManyClassificationTests
-from tensor_networks.annotations import *
 from tensor_networks.decomposition import truncated_svd
 from tensor_networks.inputs import index_label
 from tensor_networks.patched_numpy import np

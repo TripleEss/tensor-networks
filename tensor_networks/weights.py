@@ -1,6 +1,5 @@
 from math import sqrt
 
-from tensor_networks.patched_numpy import np
 from tensor_networks.tensor_train import TensorTrain
 from tensor_networks.utils import neutral_array
 
