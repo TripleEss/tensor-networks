@@ -15,12 +15,12 @@ from tensor_networks.weights import starting_weights
 TRAIN_AMOUNT = 10000  # max: 60000
 TEST_AMOUNT = 10000  # max: 10000
 CHI = 20
-FACTOR = 0.001
+LAMBDA = 0.001
 # e.g. image_feature_sin_cos or image_feature_linear
 FEATURE = image_feature_sin_cos
 
 if __name__ == '__main__':
-    print(f'{TRAIN_AMOUNT=}, {TEST_AMOUNT=}, {CHI=}, {FACTOR=}, {FEATURE=}')
+    print(f'{TRAIN_AMOUNT=}, {TEST_AMOUNT=}, {CHI=}, {LAMBDA=}, {FEATURE=}')
     # patch arrays to be float32 to enhance performance
     np.GLOBAL_NUMERIC_DATA_TYPE = np.float32
 
@@ -37,15 +37,13 @@ if __name__ == '__main__':
                                label_length=10)
 
     # optimize
-    all_the_tests: List[ManyClassificationTests] = []
     control_results = ManyClassificationTests.create(weights, test_inputs)
-    all_the_tests.append(control_results)
     print('### Results before any optimization:')
     print_test_results(control_results, summary_only=True)
     print()
     sweep_iterator = sweep_entire_train(weights, train_inputs,
                                         svd=partial(truncated_svd, max_chi=CHI),
-                                        updater=partial(update, factor=FACTOR))
+                                        updater=partial(update, factor=LAMBDA))
     for i in range(1, 21):
         print(f'### Sweep {i} ... ', end='')
         start_time = time.time()
@@ -53,6 +51,5 @@ if __name__ == '__main__':
         end_time = time.time()
         print(f'Done! ({end_time - start_time:.2f}s) ###')
         results = ManyClassificationTests.create(weights, test_inputs)
-        all_the_tests.append(results)
         print_test_results(results, summary_only=True)
         print()
