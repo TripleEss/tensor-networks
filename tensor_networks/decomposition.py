@@ -95,8 +95,8 @@ def tensor_train_decomposition(tensor: Array, d: int, *,
         (for convenience)
     :return: The tensor in tensor train format
     """
-    # Amount of elements in the tensor: $d^N$ (= tensor.size)
-    # $\Leftrightarrow N = log_d(d^N)$
+    # Amount of elements in the tensor: d^N (= tensor.size)
+    # <==> N = log_d(d^N)
     n = int(math.log(tensor.size, d))
     # Add a mock index on the left for the first iteration
     t = tensor.reshape(1, tensor.size)
