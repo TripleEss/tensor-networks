@@ -6,7 +6,7 @@ to use this as the default data type for NumPy arrays.
 This only modifies the behaviour of the local copy of NumPy defined in here.
 """
 import functools
-import importlib
+import importlib.util
 import typing
 
 if typing.TYPE_CHECKING:
